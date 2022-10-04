@@ -1,2 +1,2 @@
-# peanuts-api
-An API to fetch Peanuts comic strips
+# comics
+An API to fetch comic strips
