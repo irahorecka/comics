@@ -1,4 +1,4 @@
 beautifulsoup4
-ipython
+pillow
 python-dateutil
 requests
