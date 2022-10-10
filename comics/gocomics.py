@@ -24,11 +24,6 @@ class GoComicsAPI:
     _endpoint = "NULL"
 
     @classmethod
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-        cls.random_date = cls.random_date()
-
-    @classmethod
     def search_date(cls, date):
         if isinstance(date, str):
             date = dateutil.parser.parse(date)
@@ -54,10 +49,6 @@ class GoComics:
         else:
             self.url = self._get_date_url(date)
             self._date = date
-        self._prev_date = None
-
-    def __call__(self):
-        return self
 
     @property
     def date(self):
@@ -72,14 +63,11 @@ class GoComics:
         with open(path, "wb") as file:
             shutil.copyfileobj(stream.raw, file)
 
-    @property
-    def previous(self):
-        return GoComics(self.title, self.endpoint, self._prev_date)
-
     def show(self):
         Image.open(BytesIO(self.stream().content)).show()
 
     def stream(self):
+        # Must be called for every image request
         return self._get_response(self._get_strip_url(), stream=True)
 
     def _get_date_url(self, date):
@@ -91,8 +79,10 @@ class GoComics:
 
     def _get_strip_url(self):
         r = self._get_response(self.url)
-        self._prev_date = self._date
         self._date = dateutil.parser.parse("-".join(r.url.split("/")[-3:]))
+        # Set new URL soon as a date is found to allow multiple URL use
+        if self.url == self._get_random_url():
+            self.url = self._get_date_url(self._date)
         strip_site_text = r.text
         strip_site = BeautifulSoup(strip_site_text, "html.parser")
         strip_img = strip_site.find("div", {"class": "comic__image"})

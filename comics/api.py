@@ -638,7 +638,7 @@ class catana_comics(GoComicsAPI):
     _endpoint = "little-moments-of-love"
 
 
-class cathy_classics(GoComicsAPI):
+class cathy(GoComicsAPI):
     "GoComics endpoint for 'Cathy Classics'."
     title = "Cathy Classics"
     start_date = datetime.strptime("1976-11-22", "%Y-%m-%d")
@@ -750,7 +750,7 @@ class cornered(GoComicsAPI):
     _endpoint = "cornered"
 
 
-class cow_and_boy_classics(GoComicsAPI):
+class cow_and_boy(GoComicsAPI):
     "GoComics endpoint for 'Cow and Boy Classics'."
     title = "Cow and Boy Classics"
     start_date = datetime.strptime("2006-01-02", "%Y-%m-%d")
@@ -855,7 +855,7 @@ class dick_tracy(GoComicsAPI):
     _endpoint = "dicktracy"
 
 
-class dilbert_classics(GoComicsAPI):
+class dilbert(GoComicsAPI):
     "GoComics endpoint for 'Dilbert Classics'."
     title = "Dilbert Classics"
     start_date = datetime.strptime("2012-06-13", "%Y-%m-%d")
@@ -2024,7 +2024,7 @@ class jim_morin(GoComicsAPI):
     _endpoint = "jimmorin"
 
 
-class motley_classics(GoComicsAPI):
+class motley(GoComicsAPI):
     "GoComics endpoint for 'Motley Classics'."
     title = "Motley Classics"
     start_date = datetime.strptime("2000-01-01", "%Y-%m-%d")
@@ -2129,7 +2129,7 @@ class non_sequitur(GoComicsAPI):
     _endpoint = "nonsequitur"
 
 
-class the_norm_classics(GoComicsAPI):
+class the_norm(GoComicsAPI):
     "GoComics endpoint for 'The Norm Classics'."
     title = "The Norm Classics"
     start_date = datetime.strptime("2011-12-31", "%Y-%m-%d")
@@ -2661,7 +2661,7 @@ class shermans_lagoon(GoComicsAPI):
     _endpoint = "shermanslagoon"
 
 
-class shirley_and_son_classics(GoComicsAPI):
+class shirley_and_son(GoComicsAPI):
     "GoComics endpoint for 'Shirley and Son Classics'."
     title = "Shirley and Son Classics"
     start_date = datetime.strptime("2000-10-02", "%Y-%m-%d")
