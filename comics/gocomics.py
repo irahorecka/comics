@@ -45,7 +45,7 @@ class GoComics:
         # Select a random comic strip if date is not specified
         if date is None:
             self.url = self._get_random_url()
-            self._date = datetime(1900, 1, 1)
+            self._date = datetime(1970, 1, 1)
         else:
             self.url = self._get_date_url(date)
             self._date = date
@@ -80,7 +80,7 @@ class GoComics:
     def _get_strip_url(self):
         r = self._get_response(self.url)
         self._date = dateutil.parser.parse("-".join(r.url.split("/")[-3:]))
-        # Set new URL soon as a date is found to allow multiple URL use
+        # Replace default random URL with dated URL
         if self.url == self._get_random_url():
             self.url = self._get_date_url(self._date)
         strip_site_text = r.text
