@@ -1,17 +1,37 @@
 """
-comics/gocomics.py
-~~~~~~~~~~~~~~~~~~
+comics/gocomics
+~~~~~~~~~~~~~~~
 """
 
 import os
 import shutil
 from datetime import datetime
+from inspect import unwrap
 from io import BytesIO
+from functools import lru_cache, wraps
 
 import dateutil.parser
 import requests
 from bs4 import BeautifulSoup
 from PIL import Image
+
+_BASE_DATE_URL = "https://www.gocomics.com"
+_BASE_RANDOM_URL = "https://www.gocomics.com/random"
+
+
+def bypass_cache_last_time(func):
+    @wraps(func)
+    def function_wrapper(*args, **kwargs):
+        url = args[0]
+        print(url)
+        # If URL starts with the default random URL pattern, query URL
+        return (
+            unwrap(func)(*args, **kwargs)
+            if url.startswith(_BASE_RANDOM_URL)
+            else func(*args, **kwargs)
+        )
+
+    return function_wrapper
 
 
 class DateError(Exception):
@@ -44,8 +64,10 @@ class GoComics:
         self.endpoint = endpoint
         # Select a random comic strip if date is not specified
         if date is None:
-            self.url = self._get_random_url()
-            self._date = datetime(1970, 1, 1)
+            r = self._get_response(self._get_random_url())
+            # Set new date and replace default random URL with dated URL
+            self._date = dateutil.parser.parse("-".join(r.url.split("/")[-3:]))
+            self.url = self._get_date_url(self._date)
         else:
             self.url = self._get_date_url(date)
             self._date = date
@@ -72,17 +94,13 @@ class GoComics:
 
     def _get_date_url(self, date):
         strf_datetime = datetime.strftime(date, "%Y/%m/%d")
-        return f"https://www.gocomics.com/{self.endpoint}/{strf_datetime}"
+        return f"{_BASE_DATE_URL}/{self.endpoint}/{strf_datetime}"
 
     def _get_random_url(self):
-        return f"https://www.gocomics.com/random/{self.endpoint}"
+        return f"{_BASE_RANDOM_URL}/{self.endpoint}"
 
     def _get_strip_url(self):
         r = self._get_response(self.url)
-        self._date = dateutil.parser.parse("-".join(r.url.split("/")[-3:]))
-        # Replace default random URL with dated URL
-        if self.url == self._get_random_url():
-            self.url = self._get_date_url(self._date)
         strip_site_text = r.text
         strip_site = BeautifulSoup(strip_site_text, "html.parser")
         strip_img = strip_site.find("div", {"class": "comic__image"})
@@ -97,6 +115,8 @@ class GoComics:
             raise DateError(f'{self.date} is not a valid date for comic "{self.title}"') from e
 
     @staticmethod
+    @bypass_cache_last_time
+    @lru_cache
     def _get_response(*args, **kwargs):
         response = requests.get(*args, **kwargs)
         response.raise_for_status()
