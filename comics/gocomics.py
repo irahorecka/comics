@@ -15,7 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 from PIL import Image
 
-_BASE_DATE_URL = "https://www.gocomics.com"
+_BASE_URL = "https://www.gocomics.com"
 _BASE_RANDOM_URL = "https://www.gocomics.com/random"
 
 
@@ -23,11 +23,12 @@ def bypass_cache_last_time(func):
     @wraps(func)
     def function_wrapper(*args, **kwargs):
         url = args[0]
-        print(url)
-        # If URL starts with the default random URL pattern, query URL
+        is_stream = kwargs.get("stream", False)
+        # Query URL if URL starts with the default random URL pattern
+        # Query URL if request requires stream
         return (
             unwrap(func)(*args, **kwargs)
-            if url.startswith(_BASE_RANDOM_URL)
+            if url.startswith(_BASE_RANDOM_URL) or is_stream is True
             else func(*args, **kwargs)
         )
 
@@ -44,7 +45,7 @@ class GoComicsAPI:
     _endpoint = "NULL"
 
     @classmethod
-    def search_date(cls, date):
+    def date(cls, date):
         if isinstance(date, str):
             date = dateutil.parser.parse(date)
         if date < cls.start_date:
@@ -94,7 +95,7 @@ class GoComics:
 
     def _get_date_url(self, date):
         strf_datetime = datetime.strftime(date, "%Y/%m/%d")
-        return f"{_BASE_DATE_URL}/{self.endpoint}/{strf_datetime}"
+        return f"{_BASE_URL}/{self.endpoint}/{strf_datetime}"
 
     def _get_random_url(self):
         return f"{_BASE_RANDOM_URL}/{self.endpoint}"
