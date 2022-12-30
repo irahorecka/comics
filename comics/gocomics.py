@@ -39,7 +39,7 @@ class DateError(Exception):
     """An invalid publication date was queried."""
 
 
-class GoComicsAPI:
+class ComicsAPI:
     title = "NULL"
     start_date = datetime.today()
     _endpoint = "NULL"
@@ -52,14 +52,14 @@ class GoComicsAPI:
             date_strf = datetime.strftime(date, "%Y-%m-%d")
             start_date_strf = datetime.strftime(cls.start_date, "%Y-%m-%d")
             raise DateError(f"Search for dates after {start_date_strf}. Your input: {date_strf}")
-        return GoComics(cls.title, cls._endpoint, date)
+        return Comics(cls.title, cls._endpoint, date)
 
     @classmethod
     def random_date(cls):
-        return GoComics(cls.title, cls._endpoint)
+        return Comics(cls.title, cls._endpoint)
 
 
-class GoComics:
+class Comics:
     def __init__(self, title, endpoint, date=None):
         self.title = title
         self.endpoint = endpoint
@@ -72,6 +72,9 @@ class GoComics:
         else:
             self.url = self._get_date_url(date)
             self._date = date
+
+    def __repr__(self):
+        return f'Comics(endpoint="{self.endpoint}", date="{self.date}")'
 
     @property
     def date(self):
@@ -87,7 +90,8 @@ class GoComics:
             shutil.copyfileobj(stream.raw, file)
 
     def show(self):
-        Image.open(BytesIO(self.stream().content)).show()
+        # Conversion to RGB prevents conversion error if file is a static GIF
+        Image.open(BytesIO(self.stream().content)).convert("RGB").show()
 
     def stream(self):
         # Must be called for every image request
@@ -113,7 +117,7 @@ class GoComics:
                 .pop(0)
             )
         except AttributeError as e:
-            raise DateError(f'{self.date} is not a valid date for comic "{self.title}"') from e
+            raise DateError(f'"{self.date}" is not a valid date for comic "{self.title}"') from e
 
     @staticmethod
     @bypass_cache_last_time
