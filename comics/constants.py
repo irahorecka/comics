@@ -1,6 +1,6 @@
 """
-comics/constants.py
-~~~~~~~~~~~~~~~~~~~
+comics/constants
+~~~~~~~~~~~~~~~~
 """
 
 from . import api
@@ -89,19 +89,9 @@ COMICS_TITLE = {cls_.title.lower(): cls_.__name__ for cls_ in COMICS_CLASS}
 
 class directory:
     @staticmethod
-    def startswith(key):
-        return {
-            cls_name for title, cls_name in COMICS_TITLE.items() if title.startswith(key.lower())
-        }
-
-    @staticmethod
-    def endswith(key):
-        return {cls_name for title, cls_name in COMICS_TITLE.items() if title.endswith(key.lower())}
-
-    @staticmethod
-    def contains(key):
-        return {cls_name for title, cls_name in COMICS_TITLE.items() if key.lower() in title}
-
-    @staticmethod
     def listall():
         return tuple(sorted(COMICS_TITLE.values()))
+
+    @staticmethod
+    def search(key):
+        return {cls_name for title, cls_name in COMICS_TITLE.items() if key.lower() in title}
