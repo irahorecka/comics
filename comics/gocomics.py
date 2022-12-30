@@ -19,16 +19,25 @@ _BASE_URL = "https://www.gocomics.com"
 _BASE_RANDOM_URL = "https://www.gocomics.com/random"
 
 
-def bypass_cache_last_time(func):
+def bypass_comics_cache(func):
+    """Wrapper that checks and bypasses specific cached arguments as specified in
+    `function_wrapper`."""
+
     @wraps(func)
     def function_wrapper(*args, **kwargs):
+        """Checks and bypasses specific cached arguments for: 1. URL that starts with
+        the base random URL pattern; 2. If the requested URL requires stream.
+
+        Returns:
+            requests.models.Response: Queried or cached response.
+        """
         url = args[0]
         is_stream = kwargs.get("stream", False)
-        # Query URL if URL starts with the default random URL pattern
-        # Query URL if request requires stream
+        # 1. Query URL if URL starts with the default random URL pattern
+        # 2. Query URL if request requires stream
         return (
             unwrap(func)(*args, **kwargs)
-            if url.startswith(_BASE_RANDOM_URL) or is_stream is True
+            if url.startswith(_BASE_RANDOM_URL) or is_stream
             else func(*args, **kwargs)
         )
 
@@ -40,12 +49,25 @@ class DateError(Exception):
 
 
 class ComicsAPI:
+    """Constructs user interface with Go Comics."""
+
     title = "NULL"
     start_date = datetime.today()
     _endpoint = "NULL"
 
     @classmethod
     def date(cls, date):
+        """Constructs user interface with Go Comics given a comic strip date.
+
+        Args:
+            date (datetime.datetime | str): Comic strip date.
+
+        Raises:
+            DateError: If date is out of range for queried comic.
+
+        Returns:
+            Comics: Comics instance for comic strip with queried date.
+        """
         if isinstance(date, str):
             date = dateutil.parser.parse(date)
         if date < cls.start_date:
@@ -56,62 +78,107 @@ class ComicsAPI:
 
     @classmethod
     def random_date(cls):
+        """Constructs user interface with Go Comics with a random comic strip date.
+
+        Returns:
+            Comics: Comics instance for comic strip with random date.
+        """
         return Comics(cls.title, cls._endpoint)
 
 
 class Comics:
+    """User interface with Go Comics."""
+
     def __init__(self, title, endpoint, date=None):
         self.title = title
-        self.endpoint = endpoint
+        self._endpoint = endpoint
         # Select a random comic strip if date is not specified
         if date is None:
             r = self._get_response(self._get_random_url())
             # Set new date and replace default random URL with dated URL
             self._date = dateutil.parser.parse("-".join(r.url.split("/")[-3:]))
-            self.url = self._get_date_url(self._date)
         else:
-            self.url = self._get_date_url(date)
             self._date = date
+        self.url = self._get_date_url(self._date)
 
     def __repr__(self):
-        return f'Comics(endpoint="{self.endpoint}", date="{self.date}")'
+        return f'Comics(title="{self.title}", date="{self.date}")'
 
     @property
     def date(self):
+        """Returns string formatted comic strip date.
+
+        Returns:
+            str: String formatted comic strip date.
+        """
         return datetime.strftime(self._date, "%Y-%m-%d")
 
     def download(self, path=None):
+        """Downloads comic strip as a PNG file.
+
+        Args:
+            path (pathlib.Path | str, optional): Path to export file. If no path is specified,
+                the comic will be exported to the current working directory as '{endpoint}.png',
+                with `endpoint` being the comic strip endpoint (e.g., Calvin and Hobbes -->
+                calvinandhobbes). Defaults to None.
+        """
         path = os.getcwd() if path is None else str(path)
         if os.path.isdir(path):
-            path = os.path.join(path, f"{self.endpoint}.png")
+            path = os.path.join(path, f"{self._endpoint}.png")
         # Stream outside of context - will corrupt image if exception raised in opened file
         stream = self.stream()
         with open(path, "wb") as file:
             shutil.copyfileobj(stream.raw, file)
 
     def show(self):
+        """Shows comic strip."""
         # Conversion to RGB prevents conversion error if file is a static GIF
         Image.open(BytesIO(self.stream().content)).convert("RGB").show()
 
     def stream(self):
+        """Streams comic strip response.
+
+        Returns:
+            requests.models.Response: Streamed comic strip response.
+        """
         # Must be called for every image request
-        return self._get_response(self._get_strip_url(), stream=True)
+        return self._get_response(self._get_comic_url(), stream=True)
 
     def _get_date_url(self, date):
+        """Constructs Go Comics URL with date.
+
+        Args:
+            date (datetime.datetime): Date to query.
+
+        Returns:
+            str: Go Comics URL with date.
+        """
         strf_datetime = datetime.strftime(date, "%Y/%m/%d")
-        return f"{_BASE_URL}/{self.endpoint}/{strf_datetime}"
+        return f"{_BASE_URL}/{self._endpoint}/{strf_datetime}"
 
     def _get_random_url(self):
-        return f"{_BASE_RANDOM_URL}/{self.endpoint}"
+        """Constructs random Go Comics URL.
 
-    def _get_strip_url(self):
+        Returns:
+            str: Random Go Comics URL.
+        """
+        return f"{_BASE_RANDOM_URL}/{self._endpoint}"
+
+    def _get_comic_url(self):
+        """Gets comic strip image URL from Go Comics.
+
+        Raises:
+            DateError: If date is invalid for queried comic.
+
+        Returns:
+            str: Comic strip URL.
+        """
         r = self._get_response(self.url)
-        strip_site_text = r.text
-        strip_site = BeautifulSoup(strip_site_text, "html.parser")
-        strip_img = strip_site.find("div", {"class": "comic__image"})
+        comic_html = BeautifulSoup(r.content, "html.parser")
+        comic_img = comic_html.find("div", {"class": "comic__image"})
         try:
             return (
-                strip_img.find("picture", {"class": "item-comic-image"})
+                comic_img.find("picture", {"class": "item-comic-image"})
                 .find("img")["data-srcset"]
                 .split(" ")
                 .pop(0)
@@ -120,9 +187,17 @@ class Comics:
             raise DateError(f'"{self.date}" is not a valid date for comic "{self.title}"') from e
 
     @staticmethod
-    @bypass_cache_last_time
+    @bypass_comics_cache
     @lru_cache
     def _get_response(*args, **kwargs):
+        """Gets response for queried URL.
+
+        Raises:
+            requests.exceptions.HTTPError: If queried URL returns an unsuccessful status code.
+
+        Returns:
+            requests.models.Response: Queried URL response.
+        """
         response = requests.get(*args, **kwargs)
         response.raise_for_status()
         return response
