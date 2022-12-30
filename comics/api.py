@@ -1,6 +1,6 @@
 """
-comics/api.py
-~~~~~~~~~~~~~
+comics/api
+~~~~~~~~~~
 """
 
 from datetime import datetime
