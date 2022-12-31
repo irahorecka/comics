@@ -2,6 +2,10 @@ black: ## Black format every python file to line length 100
 	find . -type f -name "*.py" | xargs black --line-length=100;
 	make clean;
 
+test: ## Run pytest for every test file
+	pytest -W ignore -vv .;
+	make clean;
+
 flake8: ## Flake8 every python file
 	find . -type f -name "*.py" -a | xargs flake8;
 
