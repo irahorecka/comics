@@ -5,6 +5,7 @@ comics/gocomics
 
 import os
 import shutil
+import urllib3
 from datetime import datetime
 from functools import lru_cache, wraps
 from inspect import unwrap
@@ -15,6 +16,7 @@ import requests
 from bs4 import BeautifulSoup
 from PIL import Image
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 _BASE_URL = "https://www.gocomics.com"
 _BASE_RANDOM_URL = "https://www.gocomics.com/random"
 
@@ -193,12 +195,9 @@ class Comics:
     def _get_response(*args, **kwargs):
         """Gets response for queried URL.
 
-        Raises:
-            requests.exceptions.HTTPError: If queried URL returns an unsuccessful status code.
-
         Returns:
             requests.models.Response: Queried URL response.
         """
-        r = requests.get(*args, **kwargs)
+        r = requests.get(*args, **kwargs, verify=False)
         r.raise_for_status()
         return r
