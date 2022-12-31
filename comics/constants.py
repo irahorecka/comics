@@ -84,14 +84,32 @@ COMICS_CLASS = {
     api.wrong_hands, api.wumo, api.wumo_en_espanol, api.yaffle, api.yes_im_hot_in_this, api.zack_hill, api.zen_pencils, api.ziggy, api.ziggy_en_espanol,
 }
 # fmt: on
-COMICS_TITLE = {cls_.title.lower(): cls_.__name__ for cls_ in COMICS_CLASS}
 
 
 class directory:
-    @staticmethod
-    def listall():
-        return tuple(sorted(COMICS_TITLE.values()))
+    """Directory of registered comics in Go Comics."""
 
-    @staticmethod
-    def search(key):
-        return {cls_name for title, cls_name in COMICS_TITLE.items() if key.lower() in title}
+    _registered_comics = {cls_.title.lower(): cls_.__name__ for cls_ in COMICS_CLASS}
+
+    @classmethod
+    def listall(cls):
+        """Returns every registered comic in Go Comics.
+
+        Returns:
+            tuple: Every registered comic in Go Comics.
+        """
+        return tuple(sorted(cls._registered_comics.values()))
+
+    @classmethod
+    def search(cls, key):
+        """Searches directory of registered comics in Go Comics for keyword.
+
+        Args:
+            key (str): Keyword to search directory for comic.
+
+        Returns:
+            tuple: Every registered comic in Go Comics containing the queried keyword.
+        """
+        return tuple(
+            cls_name for title, cls_name in cls._registered_comics.items() if key.lower() in title
+        )
