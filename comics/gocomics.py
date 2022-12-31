@@ -191,7 +191,7 @@ class Comics:
 
     @staticmethod
     @bypass_comics_cache
-    @lru_cache
+    @lru_cache()
     def _get_response(*args, **kwargs):
         """Gets response for queried URL.
 
