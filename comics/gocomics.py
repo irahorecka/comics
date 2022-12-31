@@ -6,9 +6,9 @@ comics/gocomics
 import os
 import shutil
 from datetime import datetime
+from functools import lru_cache, wraps
 from inspect import unwrap
 from io import BytesIO
-from functools import lru_cache, wraps
 
 import dateutil.parser
 import requests
@@ -94,12 +94,11 @@ class Comics:
         self._endpoint = endpoint
         # Select a random comic strip if date is not specified
         if date is None:
-            r = self._get_response(self._get_random_url())
-            # Set new date and replace default random URL with dated URL
+            r = self._get_response(self._random_url)
+            # Set date as date of random comic strip
             self._date = dateutil.parser.parse("-".join(r.url.split("/")[-3:]))
         else:
             self._date = date
-        self.url = self._get_date_url(self._date)
 
     def __repr__(self):
         return f'Comics(title="{self.title}", date="{self.date}")'
@@ -144,7 +143,8 @@ class Comics:
         # Must be called for every image request
         return self._get_response(self._get_comic_url(), stream=True)
 
-    def _get_date_url(self, date):
+    @property
+    def url(self):
         """Constructs Go Comics URL with date.
 
         Args:
@@ -153,10 +153,11 @@ class Comics:
         Returns:
             str: Go Comics URL with date.
         """
-        strf_datetime = datetime.strftime(date, "%Y/%m/%d")
+        strf_datetime = datetime.strftime(self._date, "%Y/%m/%d")
         return f"{_BASE_URL}/{self._endpoint}/{strf_datetime}"
 
-    def _get_random_url(self):
+    @property
+    def _random_url(self):
         """Constructs random Go Comics URL.
 
         Returns:
@@ -198,6 +199,6 @@ class Comics:
         Returns:
             requests.models.Response: Queried URL response.
         """
-        response = requests.get(*args, **kwargs)
-        response.raise_for_status()
-        return response
+        r = requests.get(*args, **kwargs)
+        r.raise_for_status()
+        return r
