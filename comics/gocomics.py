@@ -51,7 +51,7 @@ class DateError(Exception):
 
 
 class ComicsAPI:
-    """Constructs user interface with Go Comics."""
+    """Constructs user interface with GoComics."""
 
     title = "NULL"
     start_date = datetime.today()
@@ -59,7 +59,7 @@ class ComicsAPI:
 
     @classmethod
     def date(cls, date):
-        """Constructs user interface with Go Comics given a comic strip date.
+        """Constructs user interface with GoComics given a comic strip date.
 
         Args:
             date (datetime.datetime | str): Comic strip date.
@@ -80,7 +80,7 @@ class ComicsAPI:
 
     @classmethod
     def random_date(cls):
-        """Constructs user interface with Go Comics with a random comic strip date.
+        """Constructs user interface with GoComics with a random comic strip date.
 
         Returns:
             Comics: Comics instance for comic strip with random date.
@@ -89,7 +89,7 @@ class ComicsAPI:
 
 
 class Comics:
-    """User interface with Go Comics."""
+    """User interface with GoComics."""
 
     def __init__(self, title, endpoint, date=None):
         self.title = title
@@ -147,28 +147,28 @@ class Comics:
 
     @property
     def url(self):
-        """Constructs Go Comics URL with date.
+        """Constructs GoComics URL with date.
 
         Args:
             date (datetime.datetime): Date to query.
 
         Returns:
-            str: Go Comics URL with date.
+            str: GoComics URL with date.
         """
         strf_datetime = datetime.strftime(self._date, "%Y/%m/%d")
         return f"{_BASE_URL}/{self._endpoint}/{strf_datetime}"
 
     @property
     def _random_url(self):
-        """Constructs random Go Comics URL.
+        """Constructs random GoComics URL.
 
         Returns:
-            str: Random Go Comics URL.
+            str: Random GoComics URL.
         """
         return f"{_BASE_RANDOM_URL}/{self._endpoint}"
 
     def _get_comic_url(self):
-        """Gets comic strip image URL from Go Comics.
+        """Gets comic strip image URL from GoComics.
 
         Raises:
             DateError: If date is invalid for queried comic.

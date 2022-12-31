@@ -12,7 +12,7 @@ def test_directory_listall():
     """Tests proper return of comic endpoints when calling `comics.directory.listall`
     method."""
     all_comics = comics.directory.listall()
-    # Number of comics registered in Go Comics as of Dec. 2022 is 474
+    # Number of comics registered in GoComics as of Dec. 2022 is 474
     assert len(all_comics) == 474
     # Check if all comics directory is a tuple of sorted comic endpoints
     assert all_comics == tuple(sorted(all_comics))

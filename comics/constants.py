@@ -87,28 +87,28 @@ COMICS_CLASS = {
 
 
 class directory:
-    """Directory of registered comics in Go Comics."""
+    """Directory of registered comics in GoComics."""
 
     _registered_comics = {cls_.title.lower(): cls_.__name__ for cls_ in COMICS_CLASS}
 
     @classmethod
     def listall(cls):
-        """Returns every registered comic in Go Comics.
+        """Returns every registered comic in GoComics.
 
         Returns:
-            tuple: Every registered comic in Go Comics.
+            tuple: Every registered comic in GoComics.
         """
         return tuple(sorted(cls._registered_comics.values()))
 
     @classmethod
     def search(cls, key):
-        """Searches directory of registered comics in Go Comics for keyword.
+        """Searches directory of registered comics in GoComics for keyword.
 
         Args:
             key (str): Keyword to search directory for comic.
 
         Returns:
-            tuple: Every registered comic in Go Comics containing the queried keyword.
+            tuple: Every registered comic in GoComics containing the queried keyword.
         """
         return tuple(
             cls_name for title, cls_name in cls._registered_comics.items() if key.lower() in title
