@@ -38,17 +38,17 @@ import comics
 # List available comics - total of 474
 comics.directory.listall()
 
-# Find your favorite comic
+# Find Dilbert
 comics.directory.search("Dilbert")
 
 >>> ("dilbert", "dilbert_en_espanol")
 ```
 
-Use the desired endpoint to query your comic. For example, to search for Dilbert comics in english use `comics.dilbert`; for spanish, use `comics.dilbert_en_espanol`.
+Use the desired endpoint to query the comic. For example, to search for Dilbert comics in english use `comics.dilbert`; for spanish, use `comics.dilbert_en_espanol`.
 
 ## Search and download comics
 
-Instantiate your query class with a date argument or use the random date constructor:
+Instantiate the query class with a date argument or use the random date constructor:
 
 ```python
 import comics
@@ -60,7 +60,7 @@ random_dilbert = comics.dilbert.random_date()
 Once instantiated, show, download, or stream the comic strip:
 
 ```python
-# Show comic - opens default image viewer application
+# Show comic - opens in default image viewer application
 dilbert.show()
 # Download comic - defaults to {comic endpoint}.png if an export path is not provided. E.g., a Dilbert comic strip will be exported as "dilbert.png" in the current working directory
 dilbert.download()
