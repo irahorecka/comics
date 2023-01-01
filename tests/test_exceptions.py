@@ -21,4 +21,4 @@ def test_unregistered_date():
     the comic of interest."""
     ch = comics.calvin_and_hobbes.date("2050-01-01")
     with pytest.raises(DateError):
-        ch.download("../downloads/ch_test.png")
+        ch.show()
