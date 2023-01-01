@@ -13,7 +13,7 @@
 pip install comics
 ```
 
-## Quick Start
+## Quick start
 
 Find and download the Calvin and Hobbes comic strip published on January 2, 1990:
 
@@ -40,50 +40,58 @@ comics.directory.listall()
 
 # Find Dilbert
 comics.directory.search("Dilbert")
-
->>> ("dilbert", "dilbert_en_espanol")
+# >>> ("dilbert", "dilbert_en_espanol")
 ```
 
-Use the desired endpoint to query the comic. For example, to search for Dilbert comics in english use `comics.dilbert`; for spanish, use `comics.dilbert_en_espanol`.
+Use the desired endpoint to query a comic. For example, to search for Dilbert comics in english use `comics.dilbert`; for spanish, use `comics.dilbert_en_espanol`.
 
 ## Search and download comics
 
-Instantiate the query class with a date argument or use the random date constructor:
+Instantiate a query class with a date argument or use the random date constructor:
 
 ```python
 import comics
 
+# Get a Dilbert comic strip by date
 dilbert = comics.dilbert.date("2013-05-13")  # Also accepts datetime object
+
+# Get a random Dilbert comic strip
 random_dilbert = comics.dilbert.random_date()
 ```
 
 Once instantiated, show, download, or stream the comic strip:
 
 ```python
-# Show comic - opens in default image viewer application
+# Show comic strip - opens in default image viewer application
 dilbert.show()
-# Download comic - defaults to {comic endpoint}.png if an export path is not provided. E.g., a Dilbert comic strip will be exported as "dilbert.png" in the current working directory
+
+# Download comic strip - defaults to {comic endpoint}.png if an export path is not provided
+# E.g., a Dilbert comic strip will be exported as "dilbert.png" in the current working directory
 dilbert.download()
-# Stream comic - useful if custom image content manipulation is desired
+
+# Stream comic strip - useful if custom image content manipulation is desired
 dilbert.stream()
 ```
 
 ## Attributes
 
-Every instantiated query class will have the following public attributes:
+An instantiated query class will have the following public attributes:
 
 ```python
 import comics
 
 garfield = comics.garfield.date("08/20/2000")
-garfield.date  # "2000-08-20"
-garfield.title  # "Garfield"
-garfield.url  # "https://www.gocomics.com/garfield/2000/08/20"
+garfield.date
+# >>> "2000-08-20"
+garfield.title
+# >>> "Garfield"
+garfield.url
+# >>> "https://www.gocomics.com/garfield/2000/08/20"
 ```
 
 ## Exceptions
 
-An exception will be thrown if the query date is unregistered or before the comic's origin date. Catch this exception as follows:
+An exception will be thrown if the query date is unregistered or before the comic's origin date:
 
 ```python
 import comics
