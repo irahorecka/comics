@@ -143,7 +143,7 @@ class Comics:
             requests.models.Response: Streamed comic strip response.
         """
         # Must be called for every image request
-        return self._get_response(self._get_comic_url(), stream=True)
+        return self._get_response(self._comic_strip_url, stream=True)
 
     @property
     def url(self):
@@ -167,7 +167,8 @@ class Comics:
         """
         return f"{_BASE_RANDOM_URL}/{self._endpoint}"
 
-    def _get_comic_url(self):
+    @property
+    def _comic_strip_url(self):
         """Gets comic strip image URL from GoComics.
 
         Raises:
