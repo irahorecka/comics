@@ -71,7 +71,7 @@ def _download_comic_and_verify_content(comics_inst):
     Args:
         comics_inst (Comics): `Comics` instance.
     """
-    img_filepath = Path("./tests/downloads/comics_test.png").resolve()
+    img_filepath = Path(__file__).parent / "downloads" / "comics_test.png"
     # Verify download method works
     comics_inst.download(img_filepath)
     # Raises `PIL.UnidentifiedImageError` if invalid image
