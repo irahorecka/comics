@@ -22,11 +22,10 @@ _BASE_RANDOM_URL = "https://www.gocomics.com/random"
 
 
 def bypass_comics_cache(func):
-    """Wrapper that checks and bypasses specific cached arguments as specified in
-    `function_wrapper`."""
+    """Comcics cache wrapper that checks and bypasses specific cached arguments."""
 
     @wraps(func)
-    def function_wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         """Checks and bypasses specific cached arguments for: 1. URL that starts with
         the base random URL pattern; 2. If the requested URL requires stream.
 
@@ -43,7 +42,7 @@ def bypass_comics_cache(func):
             else func(*args, **kwargs)
         )
 
-    return function_wrapper
+    return wrapper
 
 
 class DateError(Exception):
@@ -59,7 +58,7 @@ class ComicsAPI:
 
     @classmethod
     def date(cls, date):
-        """Constructs user interface with GoComics given a comic strip date.
+        """Constructs user interface with GoComics provided a comic strip date.
 
         Args:
             date (datetime.datetime | str): Comic strip date.
@@ -68,7 +67,7 @@ class ComicsAPI:
             DateError: If date is out of range for queried comic.
 
         Returns:
-            Comics: Comics instance for comic strip with queried date.
+            Comics: `Comics` instance of comic strip published on the provided date.
         """
         if isinstance(date, str):
             date = dateutil.parser.parse(date)
@@ -83,7 +82,7 @@ class ComicsAPI:
         """Constructs user interface with GoComics with a random comic strip date.
 
         Returns:
-            Comics: Comics instance for comic strip with random date.
+            Comics: `Comics` instance of comic strip published on a random date.
         """
         return Comics(cls.title, cls._endpoint)
 
@@ -115,7 +114,7 @@ class Comics:
         return datetime.strftime(self._date, "%Y-%m-%d")
 
     def download(self, path=None):
-        """Downloads comic strip as a PNG file.
+        """Downloads comic strip. Downloads as a PNG file if no image endpoint is specified.
 
         Args:
             path (pathlib.Path | str, optional): Path to export file. If no path is specified,
