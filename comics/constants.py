@@ -6,7 +6,7 @@ comics/constants
 from . import api
 
 # fmt: off
-COMICS_CLASS = {
+COMICS_CLASS = (
     api.a_problem_like_jamal, api.aaggghhh, api.adam_at_home, api.adult_children, api.agnes,
     api.aj_and_magnus, api.al_goodwyn_editorial_cartoons, api.alis_house, api.alley_oop, api.amanda_the_great,
     api.andertoons, api.andy_capp, api.angry_little_girls, api.animal_crackers, api.annie, api.arlo_and_janis,
@@ -82,7 +82,7 @@ COMICS_CLASS = {
     api.walt_handelsman, api.warped, api.watch_your_head, api.wawawiwa, api.waynovision, api.wee_pals, api.widdershins, api.wide_open,
     api.win_lose_drew, api.wizard_of_id, api.wizard_of_id_classics, api.wondermark, api.working_daze, api.working_it_out, api.worry_lines,
     api.wrong_hands, api.wumo, api.wumo_en_espanol, api.yaffle, api.yes_im_hot_in_this, api.zack_hill, api.zen_pencils, api.ziggy, api.ziggy_en_espanol,
-}
+)
 # fmt: on
 
 
