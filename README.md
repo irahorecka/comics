@@ -37,6 +37,7 @@ import comics
 
 # List available comics - total of 474
 comics.directory.listall()
+# >>> ("a_problem_like_jamal", "aaggghhh", "adam_at_home", "adult_children", ... )
 
 # Find Dilbert
 comics.directory.search("Dilbert")
