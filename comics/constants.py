@@ -111,5 +111,7 @@ class directory:
             tuple: Every registered comic in GoComics containing the queried keyword.
         """
         return tuple(
-            cls_name for title, cls_name in cls._registered_comics.items() if key.lower() in title
+            cls_name
+            for title, cls_name in cls._registered_comics.items()
+            if key.lower() in title.lower()
         )
