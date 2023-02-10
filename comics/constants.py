@@ -89,7 +89,7 @@ COMICS_CLASS = (
 class directory:
     """Directory of registered comics in GoComics."""
 
-    _registered_comics = {cls_.title.lower(): cls_.__name__ for cls_ in COMICS_CLASS}
+    _registered_comics = {cls_.title: cls_.__name__ for cls_ in COMICS_CLASS}
 
     @classmethod
     def listall(cls):
