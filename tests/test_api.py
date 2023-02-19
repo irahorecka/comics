@@ -72,8 +72,10 @@ def _download_comic_and_verify_content(comics_inst):
         comics_inst (Comics): `Comics` instance.
     """
     img_filepath = Path(__file__).parent / "downloads" / "comics_test.png"
+    # Start by deleting the image if present - this allows me to keep the file tracked in Git to enable
+    # GitHub Actions testing
+    os.remove(img_filepath)
     # Verify download method works
     comics_inst.download(img_filepath)
     # Raises `PIL.UnidentifiedImageError` if invalid image
     Image.open(img_filepath).verify()
-    os.remove(img_filepath)
