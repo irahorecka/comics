@@ -96,12 +96,12 @@ An exception will be thrown if the query date is unregistered or before the comi
 
 ```python
 import comics
-from comics import DateError
+from comics import InvalidDateError
 
 try:
     peanuts = comics.peanuts.date("1900-01-01")
     peanuts.download()
-except DateError:
+except InvalidDateError:
     print("Whoops - an invalid date was queried.")
 ```
 

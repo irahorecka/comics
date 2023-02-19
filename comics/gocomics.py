@@ -45,7 +45,7 @@ def bypass_comics_cache(func):
     return wrapper
 
 
-class DateError(Exception):
+class InvalidDateError(Exception):
     """An invalid publication date was queried."""
 
 
@@ -64,7 +64,7 @@ class ComicsAPI:
             date (datetime.datetime | str): Comic strip date.
 
         Raises:
-            DateError: If date is out of range for queried comic.
+            InvalidDateError: If date is out of range for queried comic.
 
         Returns:
             Comics: `Comics` instance of comic strip published on the provided date.
@@ -74,7 +74,9 @@ class ComicsAPI:
         if date < cls.start_date:
             date_strf = datetime.strftime(date, "%Y-%m-%d")
             start_date_strf = datetime.strftime(cls.start_date, "%Y-%m-%d")
-            raise DateError(f"Search for dates after {start_date_strf}. Your input: {date_strf}")
+            raise InvalidDateError(
+                f"Search for dates after {start_date_strf}. Your input: {date_strf}"
+            )
         return Comics(cls.title, cls._endpoint, date)
 
     @classmethod
@@ -171,7 +173,7 @@ class Comics:
         """Gets comic strip image URL from GoComics.
 
         Raises:
-            DateError: If date is invalid for queried comic.
+            InvalidDateError: If date is invalid for queried comic.
 
         Returns:
             str: Comic strip URL.
@@ -187,7 +189,9 @@ class Comics:
                 .pop(0)
             )
         except AttributeError as e:
-            raise DateError(f'"{self.date}" is not a valid date for comic "{self.title}"') from e
+            raise InvalidDateError(
+                f'"{self.date}" is not a valid date for comic "{self.title}"'
+            ) from e
 
     @staticmethod
     @bypass_comics_cache
