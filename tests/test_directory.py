@@ -21,7 +21,11 @@ def test_directory_listall():
 @mark.parametrize("params", (("fox", 3), ("calvin", 2), ("se", 30), ("rm", 6), ("at", 42)))
 def test_directory_search(params):
     """Tests proper return of comic endpoints when calling `comics.directory.search`
-    method with search keywords (case insensitive)."""
+    method with search keywords (case insensitive).
+
+    Args:
+        params (tuple): Args to unpack for testing number of search results.
+    """
     search_kwd, num_results = params
     assert len(comics.directory.search(search_kwd)) == num_results
     # Test case insensitivity

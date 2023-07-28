@@ -12,6 +12,7 @@ from PIL import Image
 
 import comics
 
+
 # fmt: off
 attributes = (
     (comics.calvin_and_hobbes, "Calvin and Hobbes", "2017-02-14", "https://www.gocomics.com/calvinandhobbes/2017/02/14"),
@@ -45,9 +46,10 @@ def test_random_date():
 
 
 def test_stream():
-    """Test comic image stream instance."""
+    """Test comic image stream instance and status code."""
     ch = comics.calvin_and_hobbes.random_date()
     assert isinstance(ch.stream(), requests.models.Response)
+    assert ch.stream().status_code == 200
 
 
 def test_download_comic_and_verify_content():
