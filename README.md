@@ -102,13 +102,13 @@ try:
     peanuts = comics.peanuts.date("1900-01-01")
     peanuts.download()
 except InvalidDateError:
-    print("Whoops - an invalid date was queried.")
+    print("Whoops, an invalid date was queried.")
 ```
 
 ## Contribute
 
-- [Issues Tracker](https://github.com/irahorecka/comics/issues)
-- [Source Code](https://github.com/irahorecka/comics/tree/master/comics)
+* [Issues Tracker](https://github.com/irahorecka/comics/issues)
+* [Source Code](https://github.com/irahorecka/comics/tree/master/comics)
 
 ## Support
 
