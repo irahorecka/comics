@@ -5,7 +5,7 @@ comics/api
 
 from datetime import datetime
 
-from .gocomics import ComicsAPI
+from comics.gocomics import ComicsAPI
 
 
 class aaggghhh(ComicsAPI):

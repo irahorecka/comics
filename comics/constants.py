@@ -3,7 +3,7 @@ comics/constants
 ~~~~~~~~~~~~~~~~
 """
 
-from . import api
+from comics import api
 
 # fmt: off
 COMICS_CLASS = (

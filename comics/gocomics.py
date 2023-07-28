@@ -16,6 +16,8 @@ import requests
 from bs4 import BeautifulSoup
 from PIL import Image
 
+from comics.exceptions import InvalidDateError
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 _BASE_URL = "https://www.gocomics.com"
 _BASE_RANDOM_URL = "https://www.gocomics.com/random"
@@ -43,10 +45,6 @@ def bypass_comics_cache(func):
         )
 
     return wrapper
-
-
-class InvalidDateError(Exception):
-    """An invalid publication date was queried."""
 
 
 class ComicsAPI:
