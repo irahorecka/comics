@@ -108,7 +108,7 @@ except InvalidDateError:
 ## Contribute
 
 * [Issues Tracker](https://github.com/irahorecka/comics/issues)
-* [Source Code](https://github.com/irahorecka/comics/tree/master/comics)
+* [Source Code](https://github.com/irahorecka/comics/tree/main/comics)
 
 ## Support
 
