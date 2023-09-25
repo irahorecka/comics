@@ -456,6 +456,14 @@ class big_top(ComicsAPI):
     _endpoint = "bigtop"
 
 
+class bill_bramhall(ComicsAPI):
+    """GoComics endpoint for 'Bill Bramhall'."""
+
+    title = "Bill Bramhall"
+    start_date = datetime.strptime("2023-04-25", "%Y-%m-%d")
+    _endpoint = "bill-bramhall"
+
+
 class bird_and_moon(ComicsAPI):
     """GoComics endpoint for 'Bird and Moon'."""
 
@@ -510,6 +518,14 @@ class bo_nanas(ComicsAPI):
     title = "Bo Nanas"
     start_date = datetime.strptime("2004-01-01", "%Y-%m-%d")
     _endpoint = "bonanas"
+
+
+class bob_the_angry_flower(ComicsAPI):
+    """GoComics endpoint for 'Bob the Angry Flower'."""
+
+    title = "Bob the Angry Flower"
+    start_date = datetime.strptime("2022-10-24", "%Y-%m-%d")
+    _endpoint = "bob-the-angry-flower"
 
 
 class bob_the_squirrel(ComicsAPI):
@@ -582,14 +598,6 @@ class bozo(ComicsAPI):
     title = "Bozo"
     start_date = datetime.strptime("1947-11-24", "%Y-%m-%d")
     _endpoint = "bozo"
-
-
-class break_of_day(ComicsAPI):
-    """GoComics endpoint for 'Break of Day'."""
-
-    title = "Break of Day"
-    start_date = datetime.strptime("2011-08-29", "%Y-%m-%d")
-    _endpoint = "break-of-day"
 
 
 class breaking_cat_news(ComicsAPI):
@@ -672,7 +680,7 @@ class buni(ComicsAPI):
     _endpoint = "buni"
 
 
-class el_café_de_poncho(ComicsAPI):
+class el_cafe_de_poncho(ComicsAPI):
     """GoComics endpoint for 'El Café de Poncho'."""
 
     title = "El Café de Poncho"
@@ -702,14 +710,6 @@ class tim_campbell(ComicsAPI):
     title = "Tim Campbell"
     start_date = datetime.strptime("2017-07-01", "%Y-%m-%d")
     _endpoint = "tim-campbell"
-
-
-class candorville(ComicsAPI):
-    """GoComics endpoint for 'Candorville'."""
-
-    title = "Candorville"
-    start_date = datetime.strptime("2004-01-01", "%Y-%m-%d")
-    _endpoint = "candorville"
 
 
 class stuart_carlson(ComicsAPI):
@@ -880,6 +880,14 @@ class crabgrass(ComicsAPI):
     _endpoint = "crabgrass"
 
 
+class crankshaft(ComicsAPI):
+    """GoComics endpoint for 'Crankshaft'."""
+
+    title = "Crankshaft"
+    start_date = datetime.strptime("2003-03-17", "%Y-%m-%d")
+    _endpoint = "crankshaft"
+
+
 class crumb(ComicsAPI):
     """GoComics endpoint for 'Crumb'."""
 
@@ -894,6 +902,14 @@ class cul_de_sac(ComicsAPI):
     title = "Cul de Sac"
     start_date = datetime.strptime("2007-09-10", "%Y-%m-%d")
     _endpoint = "culdesac"
+
+
+class curses(ComicsAPI):
+    """GoComics endpoint for 'Curses'."""
+
+    title = "Curses"
+    start_date = datetime.strptime("2022-10-31", "%Y-%m-%d")
+    _endpoint = "curses"
 
 
 class daddys_home(ComicsAPI):
@@ -936,6 +952,14 @@ class matt_davies(ComicsAPI):
     _endpoint = "mattdavies"
 
 
+class day_by_dave(ComicsAPI):
+    """GoComics endpoint for 'Day by Dave'."""
+
+    title = "Day by Dave"
+    start_date = datetime.strptime("2022-12-12", "%Y-%m-%d")
+    _endpoint = "day-by-dave"
+
+
 class deep_dark_fears(ComicsAPI):
     """GoComics endpoint for 'Deep Dark Fears'."""
 
@@ -974,22 +998,6 @@ class dick_tracy(ComicsAPI):
     title = "Dick Tracy"
     start_date = datetime.strptime("2001-04-08", "%Y-%m-%d")
     _endpoint = "dicktracy"
-
-
-class dilbert(ComicsAPI):
-    """GoComics endpoint for 'Dilbert Classics'."""
-
-    title = "Dilbert Classics"
-    start_date = datetime.strptime("2012-06-13", "%Y-%m-%d")
-    _endpoint = "dilbert-classics"
-
-
-class dilbert_en_espanol(ComicsAPI):
-    """GoComics endpoint for 'Dilbert en Español'."""
-
-    title = "Dilbert en Español"
-    start_date = datetime.strptime("2011-05-02", "%Y-%m-%d")
-    _endpoint = "dilbert-en-espanol"
 
 
 class the_dinette_set(ComicsAPI):
@@ -1078,14 +1086,6 @@ class drabble(ComicsAPI):
     title = "Drabble"
     start_date = datetime.strptime("1990-01-11", "%Y-%m-%d")
     _endpoint = "drabble"
-
-
-class dumbwich_castle(ComicsAPI):
-    """GoComics endpoint for 'Dumbwich Castle'."""
-
-    title = "Dumbwich Castle"
-    start_date = datetime.strptime("2017-01-30", "%Y-%m-%d")
-    _endpoint = "dumbwich-castle"
 
 
 class the_duplex(ComicsAPI):
@@ -1350,6 +1350,14 @@ class frog_applause(ComicsAPI):
     title = "Frog Applause"
     start_date = datetime.strptime("2006-12-20", "%Y-%m-%d")
     _endpoint = "frogapplause"
+
+
+class furbabies(ComicsAPI):
+    """GoComics endpoint for 'FurBabies'."""
+
+    title = "FurBabies"
+    start_date = datetime.strptime("2023-06-05", "%Y-%m-%d")
+    _endpoint = "furbabies"
 
 
 class the_fusco_brothers(ComicsAPI):
@@ -1776,6 +1784,14 @@ class jim_benton_cartoons(ComicsAPI):
     _endpoint = "jim-benton-cartoons"
 
 
+class joey_weatherford(ComicsAPI):
+    """GoComics endpoint for 'Joey Weatherford'."""
+
+    title = "Joey Weatherford"
+    start_date = datetime.strptime("2023-05-16", "%Y-%m-%d")
+    _endpoint = "joey-weatherford"
+
+
 class clay_jones(ComicsAPI):
     """GoComics endpoint for 'Clay Jones'."""
 
@@ -1934,6 +1950,14 @@ class learn_to_speak_cat(ComicsAPI):
     title = "Learn to Speak Cat"
     start_date = datetime.strptime("2015-02-02", "%Y-%m-%d")
     _endpoint = "learn-to-speak-cat"
+
+
+class legends_in_the_heights(ComicsAPI):
+    """GoComics endpoint for 'Legends in the Heights'."""
+
+    title = "Legends in the Heights"
+    start_date = datetime.strptime("2022-09-30", "%Y-%m-%d")
+    _endpoint = "legends-in-the-heights"
 
 
 class mike_lester(ComicsAPI):
@@ -2312,6 +2336,14 @@ class jim_morin(ComicsAPI):
     _endpoint = "jimmorin"
 
 
+class mother_goose_and_grimm(ComicsAPI):
+    """GoComics endpoint for 'Mother Goose and Grimm'."""
+
+    title = "Mother Goose and Grimm"
+    start_date = datetime.strptime("2023-01-01", "%Y-%m-%d")
+    _endpoint = "mother-goose-and-grimm"
+
+
 class motley(ComicsAPI):
     """GoComics endpoint for 'Motley Classics'."""
 
@@ -2326,14 +2358,6 @@ class mr_lowe(ComicsAPI):
     title = "Mr. Lowe"
     start_date = datetime.strptime("2015-05-18", "%Y-%m-%d")
     _endpoint = "mr-lowe"
-
-
-class mt_pleasant(ComicsAPI):
-    """GoComics endpoint for 'Mt. Pleasant '."""
-
-    title = "Mt. Pleasant "
-    start_date = datetime.strptime("2021-01-01", "%Y-%m-%d")
-    _endpoint = "mtpleasant"
 
 
 class mutt_and_jeff(ComicsAPI):
@@ -2606,14 +2630,6 @@ class henry_payne(ComicsAPI):
     title = "Henry Payne"
     start_date = datetime.strptime("2001-02-06", "%Y-%m-%d")
     _endpoint = "henrypayne"
-
-
-class pc_and_pixel(ComicsAPI):
-    """GoComics endpoint for 'PC and Pixel'."""
-
-    title = "PC and Pixel"
-    start_date = datetime.strptime("2011-05-31", "%Y-%m-%d")
-    _endpoint = "pcandpixel"
 
 
 class peanuts(ComicsAPI):
@@ -2968,14 +2984,6 @@ class rudy_park(ComicsAPI):
     _endpoint = "rudypark"
 
 
-class salt_n_pepper(ComicsAPI):
-    """GoComics endpoint for 'Salt n Pepper'."""
-
-    title = "Salt n Pepper"
-    start_date = datetime.strptime("2021-04-26", "%Y-%m-%d")
-    _endpoint = "salt-n-pepper"
-
-
 class sarahs_scribbles(ComicsAPI):
     """GoComics endpoint for 'Sarah's Scribbles'."""
 
@@ -3272,7 +3280,7 @@ class tarzan(ComicsAPI):
     _endpoint = "tarzan"
 
 
-class tarzán_en_espanol(ComicsAPI):
+class tarzan_en_espanol(ComicsAPI):
     """GoComics endpoint for 'Tarzán en Español'."""
 
     title = "Tarzán en Español"
@@ -3414,6 +3422,14 @@ class two_party_opera(ComicsAPI):
     title = "Two Party Opera"
     start_date = datetime.strptime("2016-09-05", "%Y-%m-%d")
     _endpoint = "two-party-opera"
+
+
+class ufo(ComicsAPI):
+    """GoComics endpoint for 'UFO'."""
+
+    title = "UFO"
+    start_date = datetime.strptime("2023-07-10", "%Y-%m-%d")
+    _endpoint = "ufo"
 
 
 class underpants_and_overbites(ComicsAPI):
@@ -3598,14 +3614,6 @@ class wide_open(ComicsAPI):
     title = "Wide Open"
     start_date = datetime.strptime("2010-07-17", "%Y-%m-%d")
     _endpoint = "wide-open"
-
-
-class signe_wilkinson(ComicsAPI):
-    """GoComics endpoint for 'Signe Wilkinson'."""
-
-    title = "Signe Wilkinson"
-    start_date = datetime.strptime("2003-02-24", "%Y-%m-%d")
-    _endpoint = "signewilkinson"
 
 
 class win_lose_drew(ComicsAPI):

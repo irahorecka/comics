@@ -12,13 +12,13 @@ def test_directory_listall():
     """Tests proper return of comic endpoints when calling `comics.directory.listall`
     method."""
     all_comics = comics.directory.listall()
-    # Number of comics registered in GoComics as of Dec. 2022 is 474
-    assert len(all_comics) == 474
+    # Number of comics registered in GoComics as of Sept. 2023 is 475
+    assert len(all_comics) == 475
     # Check if all comics directory is a tuple of sorted comic endpoints
     assert all_comics == tuple(sorted(all_comics))
 
 
-@mark.parametrize("params", (("fox", 3), ("calvin", 2), ("se", 30), ("rm", 6), ("at", 42)))
+@mark.parametrize("params", (("fox", 3), ("calvin", 2), ("se", 32), ("rm", 6), ("at", 43)))
 def test_directory_search(params):
     """Tests proper return of comic endpoints when calling `comics.directory.search`
     method with search keywords (case insensitive).
