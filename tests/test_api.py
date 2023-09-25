@@ -16,7 +16,7 @@ import comics
 # fmt: off
 attributes = (
     (comics.calvin_and_hobbes, "Calvin and Hobbes", "2017-02-14", "https://www.gocomics.com/calvinandhobbes/2017/02/14"),
-    (comics.dilbert, "Dilbert Classics", "2016-01-22", "https://www.gocomics.com/dilbert-classics/2016/01/22"),
+    (comics.jim_benton_cartoons, "Jim Benton Cartoons", "2020-05-10", "https://www.gocomics.com/jim-benton-cartoons/2020/05/10"),
     (comics.foxtrot, "FoxTrot", "1992-04-17", "https://www.gocomics.com/foxtrot/1992/04/17"),
     (comics.garfield, "Garfield", "2010-06-30", "https://www.gocomics.com/garfield/2010/06/30"),
     (comics.peanuts, "Peanuts", "1965-07-04", "https://www.gocomics.com/peanuts/1965/07/04"),
@@ -34,6 +34,8 @@ def test_attributes(attributes):
     assert comics_inst.title == title
     assert comics_inst.date == date
     assert comics_inst.url == url
+    # Check if comic strip URL content is an image
+    assert requests.head(comics_inst.image_url).headers.get("content-type", "").startswith("image/")
 
 
 def test_random_date():

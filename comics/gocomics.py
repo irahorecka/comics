@@ -142,32 +142,10 @@ class Comics:
             requests.models.Response: Streamed comic strip response.
         """
         # Must be called for every image request
-        return self._get_response(self._comic_strip_url, stream=True)
+        return self._get_response(self.image_url, stream=True)
 
     @property
-    def url(self):
-        """Constructs GoComics URL with date.
-
-        Args:
-            date (datetime.datetime): Date to query.
-
-        Returns:
-            str: GoComics URL with date.
-        """
-        strf_datetime = datetime.strftime(self._date, "%Y/%m/%d")
-        return f"{_BASE_URL}/{self._endpoint}/{strf_datetime}"
-
-    @property
-    def _random_url(self):
-        """Constructs random GoComics URL.
-
-        Returns:
-            str: Random GoComics URL.
-        """
-        return f"{_BASE_RANDOM_URL}/{self._endpoint}"
-
-    @property
-    def _comic_strip_url(self):
+    def image_url(self):
         """Gets comic strip image URL from GoComics.
 
         Raises:
@@ -190,6 +168,28 @@ class Comics:
             raise InvalidDateError(
                 f'"{self.date}" is not a valid date for comic "{self.title}"'
             ) from e
+
+    @property
+    def url(self):
+        """Constructs GoComics URL with date.
+
+        Args:
+            date (datetime.datetime): Date to query.
+
+        Returns:
+            str: GoComics URL with date.
+        """
+        strf_datetime = datetime.strftime(self._date, "%Y/%m/%d")
+        return f"{_BASE_URL}/{self._endpoint}/{strf_datetime}"
+
+    @property
+    def _random_url(self):
+        """Constructs random GoComics URL.
+
+        Returns:
+            str: Random GoComics URL.
+        """
+        return f"{_BASE_RANDOM_URL}/{self._endpoint}"
 
     @staticmethod
     @bypass_comics_cache
