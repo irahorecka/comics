@@ -35,16 +35,16 @@ Comics can be found using the `directory` class:
 ```python
 import comics
 
-# List available comics - total of 474
+# List available comics - total of 475
 comics.directory.listall()
 # >>> ("a_problem_like_jamal", "aaggghhh", "adam_at_home", "adult_children", ... )
 
-# Find Dilbert
-comics.directory.search("Dilbert")
-# >>> ("dilbert", "dilbert_en_espanol")
+# Find Calvin and Hobbes
+comics.directory.search("Calvin and Hobbes")
+# >>> ("calvin_and_hobbes", "calvin_and_hobbes_en_espanol")
 ```
 
-Use the desired endpoint to query a comic. For example, to search for Dilbert comics in english use `comics.dilbert`; for spanish, use `comics.dilbert_en_espanol`.
+Use the desired endpoint to query a comic. For example, to search for Calvin and Hobbes comics in english use `comics.calvin_and_hobbes`; for spanish, use `comics.calvin_and_hobbes_en_espanol`.
 
 ## Search and download comics
 
@@ -53,25 +53,25 @@ Instantiate a query class with a date argument or use the random date constructo
 ```python
 import comics
 
-# Get a Dilbert comic strip by date
-dilbert = comics.dilbert.date("2013-05-13")  # Also accepts datetime object
+# Get a Calvin and Hobbes comic strip by date
+ch = comics.calvin_and_hobbes.date("2013-05-13")  # Also accepts datetime object
 
-# Get a random Dilbert comic strip
-random_dilbert = comics.dilbert.random_date()
+# Get a random Calvin and Hobbes comic strip
+random_ch = comics.calvin_and_hobbes.random_date()
 ```
 
 Once instantiated, show, download, or stream the comic strip:
 
 ```python
 # Show comic strip - opens in default image viewer application
-dilbert.show()
+ch.show()
 
 # Download comic strip - defaults to {comic endpoint}.png if an export path is not provided
-# E.g., a Dilbert comic strip will be exported as "dilbert.png" in the current working directory
-dilbert.download()
+# E.g., a Calvin and Hobbes comic strip will be exported as "calvinandhobbes.png" in the current working directory
+ch.download()
 
 # Stream comic strip - useful if custom image content manipulation is desired
-dilbert.stream()
+ch.stream()
 ```
 
 ## Attributes
@@ -88,6 +88,8 @@ garfield.title
 # >>> "Garfield"
 garfield.url
 # >>> "https://www.gocomics.com/garfield/2000/08/20"
+garfield.image_url
+# >>> "https://assets.amuniversal.com/6694c52099bd01365606005056a9545d"
 ```
 
 ## Exceptions
