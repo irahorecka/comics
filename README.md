@@ -20,8 +20,8 @@ Find and download the Calvin and Hobbes comic strip published on January 2, 1990
 ```python
 import comics
 
-ch = comics.calvin_and_hobbes.date('January 2, 1990')
-ch.download('calvinandhobbes.png')
+ch = comics.search("calvinandhobbes").date("January 2, 1990")
+ch.download("calvinandhobbes.png")
 ```
 
 <div align="center">
@@ -30,43 +30,43 @@ ch.download('calvinandhobbes.png')
 
 ## Find comics
 
-Comics can be found using the `directory` class:
+Available comics can be found using the `directory` class:
 
 ```python
 import comics
 
 # List available comics - total of 475
 comics.directory.listall()
-# >>> ("a_problem_like_jamal", "aaggghhh", "adam_at_home", "adult_children", ... )
+# >>> ("1-and-done", "9-chickweed-lane-classics", "9chickweedlane", "9to5", ... )
 
-# Find Calvin and Hobbes
+# Find endpoints for Calvin and Hobbes
 comics.directory.search("Calvin and Hobbes")
-# >>> ("calvin_and_hobbes", "calvin_and_hobbes_en_espanol")
+# >>> ("calvinandhobbes", "calvinandhobbesenespanol")
 ```
 
-Use the desired endpoint to query a comic. For example, to search for Calvin and Hobbes comics in english use `comics.calvin_and_hobbes`; for spanish, use `comics.calvin_and_hobbes_en_espanol`.
+First, pass the desired endpoint to `comics.search`. For example, to search for Calvin and Hobbes comics in english use `comics.search("calvinandhobbes")`; for spanish, use `comics.search("calvinandhobbesenespanol")`.
 
 ## Search and download comics
 
-Instantiate a query class with a date argument or use the random date constructor:
+Then, search for a comic strip using the `date` or `random_date` method:
 
 ```python
 import comics
 
 # Get a Calvin and Hobbes comic strip by date
-ch = comics.calvin_and_hobbes.date("2013-05-13")  # Also accepts datetime object
+ch = comics.search("calvinandhobbes").date("2013-05-13")  # Also accepts datetime object
 
 # Get a random Calvin and Hobbes comic strip
-random_ch = comics.calvin_and_hobbes.random_date()
+random_ch = comics.search("calvinandhobbes").random_date()
 ```
 
-Once instantiated, show, download, or stream the comic strip:
+Finally, show, download, or stream the comic strip:
 
 ```python
 # Show comic strip - opens in default image viewer application
 ch.show()
 
-# Download comic strip - defaults to {comic endpoint}.png if an export path is not provided
+# Download comic strip - defaults to {endpoint}.png if an export path is not provided
 # E.g., a Calvin and Hobbes comic strip will be exported as "calvinandhobbes.png" in the current working directory
 ch.download()
 
@@ -76,16 +76,32 @@ ch.stream()
 
 ## Attributes
 
-An instantiated query class will have the following public attributes:
+An instantiated `search` class will have the following public attributes:
 
 ```python
 import comics
 
-garfield = comics.garfield.date("08/20/2000")
-garfield.date
-# >>> "2000-08-20"
+garfield = comics.search("garfield")
+garfield.endpoint
+# >>> "garfield"
 garfield.title
 # >>> "Garfield"
+garfield.start_date
+# >>> "1978-06-19"
+```
+
+An instantiated `search` class with `date` or `random_date` will have the following public attributes:
+
+```python
+import comics
+
+garfield = comics.search("garfield").date("08/20/2000")
+garfield.endpoint
+# >>> "garfield"
+garfield.title
+# >>> "Garfield"
+garfield.date
+# >>> "2000-08-20"
 garfield.url
 # >>> "https://www.gocomics.com/garfield/2000/08/20"
 garfield.image_url
@@ -94,17 +110,30 @@ garfield.image_url
 
 ## Exceptions
 
-An exception will be thrown if the query date is unregistered or before the comic's origin date:
+An exception will be thrown if the queried date is unregistered or before the comic's origin date:
 
 ```python
 import comics
 from comics.exceptions import InvalidDateError
 
 try:
-    peanuts = comics.peanuts.date("1900-01-01")
+    peanuts = comics.search("peanuts").date("1900-01-01")
     peanuts.download()
 except InvalidDateError:
     print("Whoops, an invalid date was queried.")
+```
+
+An exception will be thrown if the queried endpoint is unregistered:
+
+```python
+import comics
+from comics.exceptions import InvalidEndpointError
+
+try:
+    invalid_comic = comics.search("invalid_endpoint").date("2000-01-01")
+    invalid_comic.download()
+except InvalidEndpointError:
+    print("Whoops, an invalid endpoint was queried.")
 ```
 
 ## Contribute
