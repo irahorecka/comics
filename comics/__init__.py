@@ -8,4 +8,4 @@ from comics.exceptions import InvalidDateError, InvalidEndpointError
 from comics.gocomics import search
 
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from comics.exceptions import InvalidEndpointError
 
-ROOT_PATH = Path(__file__).resolve().parent.parent
+FILE_PATH = Path(__file__).resolve().parent
 
 
 def _read_json(filepath, **kwargs):
@@ -54,7 +54,7 @@ def _verify_endpoint(method):
 class directory:
     """Directory of registered comics in GoComics."""
 
-    _registered_comics = _read_json(ROOT_PATH / "constants" / "endpoints.json")
+    _registered_comics = _read_json(FILE_PATH / "endpoints.json")
 
     @classmethod
     def listall(cls):
