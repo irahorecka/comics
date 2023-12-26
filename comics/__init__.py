@@ -3,9 +3,9 @@ comics
 ~~~~~~
 """
 
-from comics import exceptions
-from comics.api import *
 from comics.constants import directory
-from comics.gocomics import InvalidDateError
+from comics.exceptions import InvalidDateError, InvalidEndpointError
+from comics.gocomics import search
 
-__version__ = "0.2.0"
+
+__version__ = "0.3.0"

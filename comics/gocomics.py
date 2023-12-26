@@ -16,6 +16,7 @@ import requests
 from bs4 import BeautifulSoup
 from PIL import Image
 
+from comics.constants import directory
 from comics.exceptions import InvalidDateError
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -24,7 +25,7 @@ _BASE_RANDOM_URL = "https://www.gocomics.com/random"
 
 
 def bypass_comics_cache(func):
-    """Comcics cache wrapper that checks and bypasses specific cached arguments."""
+    """Comics cache wrapper that checks and bypasses specific cached arguments."""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -47,15 +48,18 @@ def bypass_comics_cache(func):
     return wrapper
 
 
-class ComicsAPI:
+class search:
     """Constructs user interface with GoComics."""
 
-    title = "NULL"
-    start_date = datetime.today()
-    _endpoint = "NULL"
+    def __init__(self, endpoint):
+        self.endpoint = endpoint
+        self.start_date = directory.get_start_date(self.endpoint)
+        self.title = directory.get_title(self.endpoint)
 
-    @classmethod
-    def date(cls, date):
+    def __repr__(self):
+        return f'search(endpoint="{self.endpoint}", title="{self.title}")'
+
+    def date(self, date):
         """Constructs user interface with GoComics provided a comic strip date.
 
         Args:
@@ -65,34 +69,31 @@ class ComicsAPI:
             InvalidDateError: If date is out of range for queried comic.
 
         Returns:
-            Comics: `Comics` instance of comic strip published on the provided date.
+            ComicsAPI: `ComicsAPI` instance of comic strip published on the provided date.
         """
         if isinstance(date, str):
             date = dateutil.parser.parse(date)
-        if date < cls.start_date:
-            date_strf = datetime.strftime(date, "%Y-%m-%d")
-            start_date_strf = datetime.strftime(cls.start_date, "%Y-%m-%d")
+        if date < datetime.strptime(self.start_date, "%Y-%m-%d"):
             raise InvalidDateError(
-                f"Search for dates after {start_date_strf}. Your input: {date_strf}"
+                f"Search for dates after {self.start_date}. Your input: {datetime.strftime(date, '%Y-%m-%d')}"
             )
-        return Comics(cls.title, cls._endpoint, date)
+        return ComicsAPI(self.endpoint, self.title, date)
 
-    @classmethod
-    def random_date(cls):
+    def random_date(self):
         """Constructs user interface with GoComics with a random comic strip date.
 
         Returns:
-            Comics: `Comics` instance of comic strip published on a random date.
+            ComicsAPI: `ComicsAPI` instance of comic strip published on a random date.
         """
-        return Comics(cls.title, cls._endpoint)
+        return ComicsAPI(self.endpoint, self.title)
 
 
-class Comics:
+class ComicsAPI:
     """User interface with GoComics."""
 
-    def __init__(self, title, endpoint, date=None):
+    def __init__(self, endpoint, title, date=None):
+        self.endpoint = endpoint
         self.title = title
-        self._endpoint = endpoint
         # Select a random comic strip if date is not specified
         if date is None:
             r = self._get_response(self._random_url)
@@ -102,7 +103,7 @@ class Comics:
             self._date = date
 
     def __repr__(self):
-        return f'Comics(title="{self.title}", date="{self.date}")'
+        return f'ComicsAPI(endpoint="{self.endpoint}", title="{self.title}", date="{self.date}")'
 
     @property
     def date(self):
@@ -124,7 +125,7 @@ class Comics:
         """
         path = os.getcwd() if path is None else str(path)
         if os.path.isdir(path):
-            path = os.path.join(path, f"{self._endpoint}.png")
+            path = os.path.join(path, f"{self.endpoint}.png")
         # Stream outside of context - will corrupt image if exception raised in opened file
         stream = self.stream()
         with open(path, "wb") as file:
@@ -180,7 +181,7 @@ class Comics:
             str: GoComics URL with date.
         """
         strf_datetime = datetime.strftime(self._date, "%Y/%m/%d")
-        return f"{_BASE_URL}/{self._endpoint}/{strf_datetime}"
+        return f"{_BASE_URL}/{self.endpoint}/{strf_datetime}"
 
     @property
     def _random_url(self):
@@ -189,7 +190,7 @@ class Comics:
         Returns:
             str: Random GoComics URL.
         """
-        return f"{_BASE_RANDOM_URL}/{self._endpoint}"
+        return f"{_BASE_RANDOM_URL}/{self.endpoint}"
 
     @staticmethod
     @bypass_comics_cache
