@@ -21,6 +21,4 @@ jobs:
         pip install -r requirements.txt -r requirements-dev.txt
     - name: Test
       run: |
-        pwd
-        export PYTHONPATH=".":$PYTHONPATH
-        make github-test
+        pytest -W ignore -vv .;
