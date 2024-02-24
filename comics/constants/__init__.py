@@ -22,7 +22,7 @@ def _read_json(filepath, **kwargs):
     Returns:
         dict: Dictionary representation of JSON file as specified in `filepath`.
     """
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         data = json.load(f, **kwargs)
     return data
 
