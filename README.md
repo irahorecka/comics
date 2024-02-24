@@ -63,7 +63,7 @@ random_ch = comics.search("calvinandhobbes").random_date()
 Finally, show, download, or stream the comic strip:
 
 ```python
-# Show comic strip - opens in default image viewer application
+# Show comic strip - opens in Jupyter notebook or default image viewer application
 ch.show()
 
 # Download comic strip - defaults to {endpoint}.png if an export path is not provided
