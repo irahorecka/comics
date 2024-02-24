@@ -132,9 +132,20 @@ class ComicsAPI:
             shutil.copyfileobj(stream.raw, file)
 
     def show(self):
-        """Shows comic strip."""
-        # Conversion to RGB prevents conversion error if file is a static GIF
-        Image.open(BytesIO(self.stream().content)).convert("RGB").show()
+        """Shows comic strip in Jupyter notebook if available, otherwise opens in default image viewer."""
+        try:
+            # Attempt to import the display function from IPython.display
+            from IPython.display import display
+
+            get_ipython  # This function is only available in an IPython environment
+            # Conversion to RGB prevents conversion error if file is a static GIF
+            image = Image.open(BytesIO(self.stream().content)).convert("RGB")
+            display(image)
+        except (ImportError, NameError):
+            # If IPython.display is not available or get_ipython is not defined,
+            # it means we are not running in a Jupyter notebook.
+            image = Image.open(BytesIO(self.stream().content)).convert("RGB")
+            image.show()
 
     def stream(self):
         """Streams comic strip response.
