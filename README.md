@@ -1,5 +1,9 @@
 # comics
 
+<p align="center">
+  <img src="https://static.wikia.nocookie.net/garfield/images/8/83/GoComicsLogo.png/revision/latest/scale-to-width-down/2849?cb=20230628152535" width="50%" />
+</p>
+
 [GoComics](https://www.gocomics.com/) API wrapper
 
 [![pypiv](https://img.shields.io/pypi/v/comics.svg)](https://pypi.python.org/pypi/comics)
