@@ -3,6 +3,7 @@ comics/gocomics
 ~~~~~~~~~~~~~~~
 """
 
+import contextlib
 import os
 import shutil
 import urllib3
@@ -133,19 +134,15 @@ class ComicsAPI:
 
     def show(self):
         """Shows comic strip in Jupyter notebook if available, otherwise opens in default image viewer."""
-        try:
+        image = Image.open(BytesIO(self.stream().content)).convert("RGB")
+        image.show()
+        with contextlib.suppress(ImportError, NameError):
             # Attempt to import the display function from IPython.display
             from IPython.display import display
 
             get_ipython  # This function is only available in an IPython environment
             # Conversion to RGB prevents conversion error if file is a static GIF
-            image = Image.open(BytesIO(self.stream().content)).convert("RGB")
             display(image)
-        except (ImportError, NameError):
-            # If IPython.display is not available or get_ipython is not defined,
-            # it means we are not running in a Jupyter notebook.
-            image = Image.open(BytesIO(self.stream().content)).convert("RGB")
-            image.show()
 
     def stream(self):
         """Streams comic strip response.
