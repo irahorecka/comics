@@ -4,16 +4,18 @@ comics/gocomics
 """
 
 import contextlib
+import json
 import os
 import shutil
-import urllib3
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import lru_cache, wraps
 from inspect import unwrap
 from io import BytesIO
+from random import randint
 
 import dateutil.parser
 import requests
+import urllib3
 from bs4 import BeautifulSoup
 from PIL import Image
 
@@ -74,19 +76,53 @@ class search:
         """
         if isinstance(date, str):
             date = dateutil.parser.parse(date)
-        if date < datetime.strptime(self.start_date, "%Y-%m-%d"):
+        # Convert date to date object
+        date = date.date() if isinstance(date, datetime) else date
+        if date < datetime.strptime(self.start_date, "%Y-%m-%d").date():
             raise InvalidDateError(
                 f"Search for dates after {self.start_date}. Your input: {datetime.strftime(date, '%Y-%m-%d')}"
             )
         return ComicsAPI(self.endpoint, self.title, date)
 
-    def random_date(self):
+    def random_date(self, max_attempts=20):
         """Constructs user interface with GoComics with a random comic strip date.
 
         Returns:
             ComicsAPI: `ComicsAPI` instance of comic strip published on a random date.
         """
-        return ComicsAPI(self.endpoint, self.title)
+        # Get today's date and start date of comic strip
+        today = datetime.today().date()
+        start = datetime.strptime(self.start_date, "%Y-%m-%d").date()
+
+        # Step 1: Try full-range random dates
+        for _ in range(max_attempts):
+            rand_days = randint(0, (today - start).days)
+            date = start + timedelta(days=rand_days)
+            try:
+                # Attempt to get comic strip for random date
+                potential_date = self.date(date)
+                if potential_date.image_url:
+                    return potential_date
+            except (InvalidDateError, requests.exceptions.HTTPError):
+                continue
+
+        # Step 2: Fallback to past year
+        fallback_start = today - timedelta(days=365)
+        tried_offsets = set()
+        while len(tried_offsets) < 365:
+            offset = randint(0, 364)
+            if offset in tried_offsets:
+                continue
+            tried_offsets.add(offset)
+            date = fallback_start + timedelta(days=offset)
+            try:
+                potential_date = self.date(date)
+                if potential_date.image_url:
+                    return potential_date
+            except (InvalidDateError, requests.exceptions.HTTPError):
+                continue
+
+        raise InvalidDateError("Could not find a valid comic after fallback attempts.")
 
 
 class ComicsAPI:
@@ -100,6 +136,11 @@ class ComicsAPI:
             r = self._get_response(self._random_url)
             # Set date as date of random comic strip
             self._date = dateutil.parser.parse("-".join(r.url.split("/")[-3:]))
+        # Check if date is not in the future
+        elif date > datetime.today().date():
+            raise InvalidDateError(
+                f"Search for dates on or before {datetime.today().date()}. Your input: {datetime.strftime(date, '%Y-%m-%d')}"
+            )
         else:
             self._date = date
 
@@ -161,22 +202,34 @@ class ComicsAPI:
             InvalidDateError: If date is invalid for queried comic.
 
         Returns:
-            str: Comic strip URL.
+            str: Comic strip image URL.
         """
         r = self._get_response(self.url)
         comic_html = BeautifulSoup(r.content, "html.parser")
-        comic_img = comic_html.find("div", {"class": "comic__image"})
-        try:
-            return (
-                comic_img.find("picture", {"class": "item-comic-image"})
-                .find("img")["data-srcset"]
-                .split(" ")
-                .pop(0)
-            )
-        except AttributeError as e:
-            raise InvalidDateError(
-                f'"{self.date}" is not a valid date for comic "{self.title}"'
-            ) from e
+
+        # Primary method: look for comic image in viewer container
+        viewer_div = comic_html.find(
+            "div", class_=lambda c: c and c.startswith("ComicViewer_comicViewer__comic")
+        )
+        if viewer_div:
+            img_tag = viewer_div.find("img")
+            if img_tag and img_tag.get("src"):
+                return img_tag["src"]
+
+        # Fallback: check for structured data (ld+json), but note this may return cover art
+        ld_json = comic_html.find("script", type="application/ld+json")
+        if ld_json:
+            try:
+                data = json.loads(ld_json.string)
+                if "contentUrl" in data:
+                    return data["contentUrl"]
+            except (json.JSONDecodeError, TypeError):
+                pass  # Malformed JSON or missing fields — continue fallback
+
+        # If all else fails, raise an error
+        raise InvalidDateError(
+            f'"{self.date}" is not a valid date for comic "{self.title}" or image could not be found.'
+        )
 
     @property
     def url(self):
