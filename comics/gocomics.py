@@ -216,16 +216,6 @@ class ComicsAPI:
             if img_tag and img_tag.get("src"):
                 return img_tag["src"]
 
-        # Fallback: check for structured data (ld+json), but note this may return cover art
-        ld_json = comic_html.find("script", type="application/ld+json")
-        if ld_json:
-            try:
-                data = json.loads(ld_json.string)
-                if "contentUrl" in data:
-                    return data["contentUrl"]
-            except (json.JSONDecodeError, TypeError):
-                pass  # Malformed JSON or missing fields — continue fallback
-
         # If all else fails, raise an error
         raise InvalidDateError(
             f'"{self.date}" is not a valid date for comic "{self.title}" or image could not be found.'
