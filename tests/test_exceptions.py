@@ -23,9 +23,7 @@ def test_date_before_creation():
         comics.search("calvinandhobbes").date("1900-01-01")
 
 
-def test_invalid_date():
-    """Tests proper raise of `InvalidDateError` when using an invalid / unregistered
-    date for the comic of interest."""
-    ch = comics.search("calvinandhobbes").date("2050-01-01")
+def test_invalid_future_date():
+    """Tests proper raise of `InvalidDateError` when using date that is in the future."""
     with pytest.raises(InvalidDateError):
-        ch.show()
+        comics.search("calvinandhobbes").date("2050-01-01")
