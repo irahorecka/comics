@@ -16,6 +16,16 @@ def test_invalid_endpoint():
         comics.search("invalid_endpoint").date("2000-01-01")
 
 
+def test_comic_not_found():
+    """Tests proper raise of `InvalidDateError` when using a date that does not exist
+    for the queried comic."""
+    with pytest.raises(InvalidDateError):
+        invalid_foxtrot = comics.search("foxtrot").date(
+            "2025-04-03"
+        )  # Known to be a non-existent date for Foxtrot
+        invalid_foxtrot.image_url
+
+
 def test_date_before_creation():
     """Tests proper raise of `InvalidDateError` when using date that is before the
     comic's creation date."""
