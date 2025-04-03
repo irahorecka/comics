@@ -247,11 +247,15 @@ class ComicsAPI:
     @bypass_comics_cache
     @lru_cache(maxsize=128)
     def _get_response(*args, **kwargs):
-        """Gets response for queried URL.
+        """Gets response for queried GoComics URL.
 
         Returns:
-            requests.models.Response: Queried URL response.
+            requests.models.Response: Queried GoComics URL response.
         """
         r = requests.get(*args, **kwargs, verify=False)
-        r.raise_for_status()
+        try:
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise InvalidDateError(f"Comic strip not found for {args[0]}") from e
+
         return r
