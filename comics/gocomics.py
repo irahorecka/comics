@@ -4,7 +4,6 @@ comics/gocomics
 """
 
 import contextlib
-import json
 import os
 import shutil
 from datetime import datetime, timedelta
@@ -74,14 +73,23 @@ class search:
         Returns:
             ComicsAPI: `ComicsAPI` instance of comic strip published on the provided date.
         """
+        # Check if date is a string and parse it
         if isinstance(date, str):
             date = dateutil.parser.parse(date)
         # Convert date to date object
         date = date.date() if isinstance(date, datetime) else date
+
+        # Check if date is after the comic syndication date
         if date < datetime.strptime(self.start_date, "%Y-%m-%d").date():
             raise InvalidDateError(
                 f"Search for dates after {self.start_date}. Your input: {datetime.strftime(date, '%Y-%m-%d')}"
             )
+        # Check if date is not in the future
+        if date > datetime.today().date():
+            raise InvalidDateError(
+                f"Search for dates on or before {datetime.today().date()}. Your input: {datetime.strftime(date, '%Y-%m-%d')}"
+            )
+
         return ComicsAPI(self.endpoint, self.title, date)
 
     def random_date(self, max_attempts=20):
@@ -136,11 +144,6 @@ class ComicsAPI:
             r = self._get_response(self._random_url)
             # Set date as date of random comic strip
             self._date = dateutil.parser.parse("-".join(r.url.split("/")[-3:]))
-        # Check if date is not in the future
-        elif date > datetime.today().date():
-            raise InvalidDateError(
-                f"Search for dates on or before {datetime.today().date()}. Your input: {datetime.strftime(date, '%Y-%m-%d')}"
-            )
         else:
             self._date = date
 
