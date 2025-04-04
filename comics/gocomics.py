@@ -211,13 +211,11 @@ class ComicsAPI:
             try:
                 parsed = dateutil.parser.parse(displayed_text)
                 displayed_date = parsed.date()
-
                 # GoComics omits year in button display; infer it from context
                 if (displayed_date.month, displayed_date.day) < (self._date.month, self._date.day):
                     displayed_date = displayed_date.replace(year=self._date.year - 1)
                 else:
                     displayed_date = displayed_date.replace(year=self._date.year)
-
             except ValueError:
                 displayed_date = None
 
