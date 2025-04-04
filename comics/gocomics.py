@@ -77,12 +77,13 @@ class search:
             date = dateutil.parser.parse(date)
         # Convert date to date object
         date = date.date() if isinstance(date, datetime) else date
-        # Check if date is after the comic syndication date
+
+        # Step 1: Check if date is after the comic syndication date
         if date < datetime.strptime(self.start_date, "%Y-%m-%d").date():
             raise InvalidDateError(
                 f"Search for dates after {self.start_date}. Your input: {datetime.strftime(date, '%Y-%m-%d')}"
             )
-        # Check if date is not in the future
+        # Step 2: Check if date is not in the future
         if date > datetime.today().date():
             raise InvalidDateError(
                 f"Search for dates on or before {datetime.today().date()}. Your input: {datetime.strftime(date, '%Y-%m-%d')}"
@@ -210,6 +211,7 @@ class ComicsAPI:
         # Get comic strip HTML
         r = self._get_response(self.url)
         comic_html = BeautifulSoup(r.content, "html.parser")
+
         # Primary method: look for comic image in viewer container
         viewer_div = comic_html.find(
             "div", class_=lambda c: c and c.startswith("ComicViewer_comicViewer__comic")
@@ -255,7 +257,7 @@ class ComicsAPI:
         Returns:
             requests.models.Response: Queried GoComics URL response.
         """
-        r = requests.get(*args, **kwargs, verify=False)
+        r = requests.get(*args, **kwargs, verify=False, timeout=10)
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:

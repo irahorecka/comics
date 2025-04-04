@@ -7,8 +7,8 @@ import os
 from pathlib import Path
 
 import requests
-from pytest import mark
 from PIL import Image
+from pytest import mark
 
 import comics
 
@@ -35,7 +35,11 @@ def test_attributes(attr):
     assert comics_inst.date == date
     assert comics_inst.url == url
     # Check if comic strip URL content is an image
-    assert requests.head(comics_inst.image_url).headers.get("content-type", "").startswith("image/")
+    assert (
+        requests.head(comics_inst.image_url, timeout=10)
+        .headers.get("content-type", "")
+        .startswith("image/")
+    )
 
 
 def test_random_date():
