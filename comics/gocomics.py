@@ -73,12 +73,10 @@ class search:
         Returns:
             ComicsAPI: `ComicsAPI` instance of comic strip published on the provided date.
         """
-        # Check if date is a string and parse it
         if isinstance(date, str):
             date = dateutil.parser.parse(date)
         # Convert date to date object
         date = date.date() if isinstance(date, datetime) else date
-
         # Check if date is after the comic syndication date
         if date < datetime.strptime(self.start_date, "%Y-%m-%d").date():
             raise InvalidDateError(
@@ -168,6 +166,8 @@ class ComicsAPI:
                 with `endpoint` being the comic strip endpoint (e.g., Calvin and Hobbes -->
                 calvinandhobbes). Defaults to None.
         """
+        # Set path to export file
+        # If no path is specified, the comic will be exported to the current working directory
         path = os.getcwd() if path is None else str(path)
         if os.path.isdir(path):
             path = os.path.join(path, f"{self.endpoint}.png")
@@ -207,9 +207,9 @@ class ComicsAPI:
         Returns:
             str: Comic strip image URL.
         """
+        # Get comic strip HTML
         r = self._get_response(self.url)
         comic_html = BeautifulSoup(r.content, "html.parser")
-
         # Primary method: look for comic image in viewer container
         viewer_div = comic_html.find(
             "div", class_=lambda c: c and c.startswith("ComicViewer_comicViewer__comic")
