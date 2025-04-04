@@ -13,14 +13,14 @@ FILE_PATH = Path(__file__).resolve().parent
 
 
 def _read_json(filepath, **kwargs):
-    """Reads and returns .json `filepath` as dictionary.
+    """Reads and returns .json filepath as dictionary.
 
     Args:
         filepath (str | pathlib.Path): Filepath of JSON file to read.
-        **kwargs (Any): Kwargs to pass to `json.load`.
+        **kwargs (Any): Kwargs to pass to json.load.
 
     Returns:
-        dict: Dictionary representation of JSON file as specified in `filepath`.
+        dict: Dictionary representation of JSON file as specified in filepath.
     """
     with open(filepath, "r", encoding="utf-8") as f:
         data = json.load(f, **kwargs)
@@ -28,7 +28,7 @@ def _read_json(filepath, **kwargs):
 
 
 def _verify_endpoint(method):
-    """Wrapper to verify existence of a GoComics endpoint stored in variable `endpoint`."""
+    """Wrapper to verify existence of a GoComics endpoint stored in variable endpoint."""
 
     @wraps(method)
     def wrapper(*args, **kwargs):
@@ -43,8 +43,8 @@ def _verify_endpoint(method):
         try:
             return method(*args, **kwargs)
         except KeyError as e:
-            # Relies on `endpoint` being the second argument of a class method if the value is not
-            # bound to kwarg variable `endpoint`
+            # Relies on endpoint being the second argument of a class method if the value is not
+            # bound to kwarg variable endpoint
             endpoint = kwargs.get("endpoint", args[1])
             raise InvalidEndpointError(f"'{endpoint}' is not a valid GoComics endpoint.") from e
 

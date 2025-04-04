@@ -65,7 +65,7 @@ class search:
             InvalidDateError: If date is out of range for queried comic.
 
         Returns:
-            ComicsAPI: `ComicsAPI` instance of comic strip published on the provided date.
+            ComicsAPI: ComicsAPI instance of comic strip published on the provided date.
         """
         if isinstance(date, str):
             date = dateutil.parser.parse(date)
@@ -89,7 +89,7 @@ class search:
         """Constructs user interface with GoComics with a random comic strip date.
 
         Returns:
-            ComicsAPI: `ComicsAPI` instance of comic strip published on a random date.
+            ComicsAPI: ComicsAPI instance of comic strip published on a random date.
         """
         # Get today's date and start date of comic strip
         today = datetime.today().date()
@@ -152,7 +152,7 @@ class ComicsAPI:
         Args:
             path (pathlib.Path | str, optional): Path to export file. If no path is specified,
                 the comic will be exported to the current working directory as '{endpoint}.png',
-                with `endpoint` being the comic strip endpoint (e.g., Calvin and Hobbes -->
+                with endpoint being the comic strip endpoint (e.g., Calvin and Hobbes -->
                 calvinandhobbes). Defaults to None.
         """
         # Set path to export file
