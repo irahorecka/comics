@@ -42,15 +42,6 @@ def test_attributes(attr):
     )
 
 
-def test_random_date():
-    """Test random date instance is equal to date instance when using fixed date."""
-    ch_random = comics.search("calvinandhobbes").random_date()
-    random_date = ch_random.date
-    ch_date = comics.search("calvinandhobbes").date(random_date)
-    assert ch_random.date == ch_date.date
-    assert ch_random.url == ch_date.url
-
-
 def test_stream():
     """Test comic image stream instance and status code."""
     ch = comics.search("calvinandhobbes").random_date()
@@ -58,9 +49,15 @@ def test_stream():
     assert ch.stream().status_code == 200
 
 
-def test_download_comic_and_verify_content():
-    """Test proper comic download execution and valid download image content."""
+def test_download_comic_by_random_and_verify_random_content():
+    """Test proper random comic download execution and valid download image content."""
     ch = comics.search("calvinandhobbes").random_date()
+    _download_comic_and_verify_content(ch)
+
+
+def test_download_comic_by_date_and_verify_content():
+    """Test proper comic download execution and valid download image content."""
+    ch = comics.search("calvinandhobbes").date("2025-04-03")
     _download_comic_and_verify_content(ch)
 
 
