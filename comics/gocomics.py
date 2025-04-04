@@ -23,7 +23,6 @@ from comics.exceptions import InvalidDateError
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 _BASE_URL = "https://www.gocomics.com"
-_BASE_RANDOM_URL = "https://www.gocomics.com/random"
 
 
 def bypass_comics_cache(func):
@@ -37,15 +36,10 @@ def bypass_comics_cache(func):
         Returns:
             requests.models.Response: Queried or cached response.
         """
-        url = args[0]
         is_stream = kwargs.get("stream", False)
         # 1. Query URL if URL starts with the default random URL pattern
         # 2. Query URL if request requires stream
-        return (
-            unwrap(func)(*args, **kwargs)
-            if url.startswith(_BASE_RANDOM_URL) or is_stream
-            else func(*args, **kwargs)
-        )
+        return unwrap(func)(*args, **kwargs) if is_stream else func(*args, **kwargs)
 
     return wrapper
 
@@ -107,9 +101,9 @@ class search:
             date = start + timedelta(days=rand_days)
             try:
                 # Attempt to get comic strip for random date
-                potential_date = self.date(date)
-                if potential_date.image_url:
-                    return potential_date
+                potential_comic = self.date(date)
+                if potential_comic.image_url:
+                    return potential_comic
             except (InvalidDateError, requests.exceptions.HTTPError):
                 continue
 
@@ -123,9 +117,9 @@ class search:
             tried_offsets.add(offset)
             date = fallback_start + timedelta(days=offset)
             try:
-                potential_date = self.date(date)
-                if potential_date.image_url:
-                    return potential_date
+                potential_comic = self.date(date)
+                if potential_comic.image_url:
+                    return potential_comic
             except (InvalidDateError, requests.exceptions.HTTPError):
                 continue
 
@@ -135,16 +129,10 @@ class search:
 class ComicsAPI:
     """User interface with GoComics."""
 
-    def __init__(self, endpoint, title, date=None):
+    def __init__(self, endpoint, title, date):
         self.endpoint = endpoint
         self.title = title
-        # Select a random comic strip if date is not specified
-        if date is None:
-            r = self._get_response(self._random_url)
-            # Set date as date of random comic strip
-            self._date = dateutil.parser.parse("-".join(r.url.split("/")[-3:]))
-        else:
-            self._date = date
+        self._date = date
 
     def __repr__(self):
         return f'ComicsAPI(endpoint="{self.endpoint}", title="{self.title}", date="{self.date}")'
@@ -212,6 +200,32 @@ class ComicsAPI:
         r = self._get_response(self.url)
         comic_html = BeautifulSoup(r.content, "html.parser")
 
+        # GoComics silently serves today's comic at future URLs if the comic hasn't been published yet.
+        # This is a server-side reroute (not an HTTP redirect), so we can't detect it via response URL.
+        # To catch this, we extract the displayed calendar date and compare it with the requested date.
+        date_button = comic_html.find(
+            "button", class_=lambda c: c and "ButtonCalendar_buttonCalendar" in c
+        )
+        if date_button:
+            displayed_text = date_button.get_text(strip=True)  # e.g., "Fri, Apr 4"
+            try:
+                parsed = dateutil.parser.parse(displayed_text)
+                displayed_date = parsed.date()
+
+                # GoComics omits year in button display; infer it from context
+                if (displayed_date.month, displayed_date.day) < (self._date.month, self._date.day):
+                    displayed_date = displayed_date.replace(year=self._date.year - 1)
+                else:
+                    displayed_date = displayed_date.replace(year=self._date.year)
+
+            except ValueError:
+                displayed_date = None
+
+            if displayed_date and displayed_date != self._date:
+                raise InvalidDateError(
+                    f"GoComics silently served the {displayed_date} strip instead of the requested {self.date}."
+                )
+
         # Primary method: look for comic image in viewer container
         viewer_div = comic_html.find(
             "div", class_=lambda c: c and c.startswith("ComicViewer_comicViewer__comic")
@@ -238,15 +252,6 @@ class ComicsAPI:
         """
         strf_datetime = datetime.strftime(self._date, "%Y/%m/%d")
         return f"{_BASE_URL}/{self.endpoint}/{strf_datetime}"
-
-    @property
-    def _random_url(self):
-        """Constructs random GoComics URL.
-
-        Returns:
-            str: Random GoComics URL.
-        """
-        return f"{_BASE_RANDOM_URL}/{self.endpoint}"
 
     @staticmethod
     @bypass_comics_cache
