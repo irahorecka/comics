@@ -10,7 +10,7 @@
 
 [![pypiv](https://img.shields.io/pypi/v/comics.svg)](https://pypi.python.org/pypi/comics)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![continuous-integration](https://github.com/irahorecka/comics/actions/workflows/ci.yaml/badge.svg)](https://github.com/irahorecka/comics/actions)
+[![tests](https://github.com/irahorecka/comics/actions/workflows/ci.yaml/badge.svg)](https://github.com/irahorecka/comics/actions)
 [![Licence](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/irahorecka/comics/main/LICENSE)
 
 ## Installation
