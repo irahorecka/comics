@@ -23,6 +23,6 @@ publish: ## Publish package distribution files to PyPI
 	make clean
 
 clean: ## Remove package distribution files, caches, and .DS_Store
-	rm -rf ./comics.egg-info ./dist ./build
+	rm -rf **/comics.egg-info ./dist ./build
 	find . -type d -name "__pycache__" -o -name ".pytest_cache" | xargs rm -r
 	find . -type f -name ".DS_Store" | xargs rm -r
