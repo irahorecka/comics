@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 authors = [{ name = "Ira Horecka", email = "ira89@icloud.com" }]
 license = { text = "MIT" }
+license-files = ["LICENSE"]
 dependencies = [
     "beautifulsoup4>=4.11.0",
     "ipython>=8.5.0",
