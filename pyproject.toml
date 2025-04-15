@@ -36,3 +36,6 @@ packages = ["comics"]
 
 [tool.setuptools.dynamic]
 version = { attr = "comics.__version__" }
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
