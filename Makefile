@@ -6,6 +6,7 @@ github-test: ## Run pytest for every test file in GitHub Actions
 	pytest -W ignore -vv .
 
 test: ## Run pytest for every test file
+	pip install -e . > /dev/null
 	make github-test
 	make clean
 
