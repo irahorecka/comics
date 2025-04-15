@@ -8,10 +8,10 @@
 
 [GoComics](https://www.gocomics.com/) API wrapper
 
-[![pypiv](https://img.shields.io/pypi/v/comics.svg)](https://pypi.python.org/pypi/comics)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![tests](https://github.com/irahorecka/comics/actions/workflows/ci.yaml/badge.svg)](https://github.com/irahorecka/comics/actions)
+[![pypiv](https://img.shields.io/pypi/v/comics.svg)](https://pypi.python.org/pypi/comics)
 [![Licence](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/irahorecka/comics/main/LICENSE)
+[![tests](https://github.com/irahorecka/comics/actions/workflows/ci.yaml/badge.svg)](https://github.com/irahorecka/comics/actions)
 
 ## Installation
 
