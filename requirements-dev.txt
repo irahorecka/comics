@@ -1,5 +1,6 @@
 black
+build
 flake8
-flit
 pylint
 pytest
+twine
