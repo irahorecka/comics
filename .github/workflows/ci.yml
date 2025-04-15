@@ -37,7 +37,5 @@ jobs:
 
     - name: Test with pytest
       run: |
-        # Force reinstall of setuptools<77.0 to avoid editable install bug (setuptools#4903)
-        pip install --force-reinstall "setuptools<77.0"
         pip install -e .
         pytest -W ignore -vv .
