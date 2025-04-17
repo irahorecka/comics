@@ -41,7 +41,7 @@ Available comics can be found using the `directory` class:
 ```python
 import comics
 
-# List available comics - total of 465
+# List available comics - total of 401
 comics.directory.listall()
 # >>> ("1-and-done", "9-chickweed-lane-classics", "9chickweedlane", "9to5", ... )
 
