@@ -36,7 +36,9 @@ text = "MIT"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["comics"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.dynamic]
 version = { attr = "comics.__version__" }
