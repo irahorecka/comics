@@ -5,7 +5,7 @@ comics/gocomics
 
 import contextlib
 import os
-import shutil
+import re
 from datetime import datetime, timedelta
 from functools import lru_cache, wraps
 from inspect import unwrap
@@ -155,15 +155,14 @@ class ComicsAPI:
                 with endpoint being the comic strip endpoint (e.g., Calvin and Hobbes -->
                 calvinandhobbes). Defaults to None.
         """
-        # Set path to export file
-        # If no path is specified, the comic will be exported to the current working directory
-        path = os.getcwd() if path is None else str(path)
-        if os.path.isdir(path):
-            path = os.path.join(path, f"{self.endpoint}.png")
-        # Stream outside of context - will corrupt image if exception raised in opened file
-        stream = self.stream()
-        with open(path, "wb") as file:
-            shutil.copyfileobj(stream.raw, file)
+        # Determine output path
+        if path is None or os.path.isdir(path):
+            path = os.path.join(path or os.getcwd(), f"{self.endpoint}.png")
+
+        # Fetch the high-res image bytes
+        response = self.stream()
+        image = Image.open(BytesIO(response.content)).convert("RGB")
+        image.save(path, format="PNG", quality=100)
 
     def show(self):
         """Shows comic strip in Jupyter notebook if available, otherwise opens in default image viewer."""
@@ -230,8 +229,12 @@ class ComicsAPI:
         )
         if viewer_div:
             img_tag = viewer_div.find("img")
-            if img_tag and img_tag.get("src"):
-                return img_tag["src"]
+            src = img_tag.get("src") if img_tag else None
+            if img_tag and src:
+                # Always replace quality to 100 if present
+                if "quality=" in src:
+                    return re.sub(r"quality=\d+", "quality=100", src)
+                return src
 
         # If all else fails, raise an error
         raise InvalidDateError(
@@ -251,16 +254,22 @@ class ComicsAPI:
         strf_datetime = datetime.strftime(self._date, "%Y/%m/%d")
         return f"{_BASE_URL}/{self.endpoint}/{strf_datetime}"
 
-    @staticmethod
     @bypass_comics_cache
     @lru_cache(maxsize=128)
-    def _get_response(*args, **kwargs):
+    def _get_response(self, *args, **kwargs):
         """Gets response for queried GoComics URL.
 
+        Args:
+            args (tuple): Arguments for requests.get.
+            kwargs (dict): Keyword arguments for requests.get.
+
         Returns:
-            requests.models.Response: Queried GoComics URL response.
+            requests.models.Response: Response object for the queried URL.
         """
-        r = requests.get(*args, **kwargs, verify=False, timeout=10)
+        # Define headers to accept webp images - highest quality
+        headers = kwargs.pop("headers", {})
+        headers.setdefault("Accept", "image/webp,image/apng,image/*,*/*;q=0.8")
+        r = requests.get(*args, headers=headers, verify=False, timeout=10)
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
