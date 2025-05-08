@@ -8,8 +8,8 @@ import datetime
 import pytest
 
 import comics
-from comics import InvalidDateError, InvalidEndpointError
-from comics.gocomics import ComicsAPI
+from comics._gocomics import ComicsAPI
+from comics.exceptions import InvalidDateError, InvalidEndpointError
 
 
 def test_invalid_endpoint():
