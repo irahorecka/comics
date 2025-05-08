@@ -1,6 +1,6 @@
 """
-comics/gocomics
-~~~~~~~~~~~~~~~
+comics/_gocomics
+~~~~~~~~~~~~~~~~
 """
 
 import contextlib
@@ -18,8 +18,8 @@ import urllib3
 from bs4 import BeautifulSoup
 from PIL import Image
 
-from comics.constants import directory
-from comics.exceptions import InvalidDateError
+from ._constants import directory
+from .exceptions import InvalidDateError
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 _BASE_URL = "https://www.gocomics.com"

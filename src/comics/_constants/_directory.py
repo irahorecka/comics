@@ -1,13 +1,13 @@
 """
-comics/constants/directory
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+comics/_constants/_directory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import json
 from functools import wraps
 from pathlib import Path
 
-from comics.exceptions import InvalidEndpointError
+from ..exceptions import InvalidEndpointError
 
 FILE_PATH = Path(__file__).resolve().parent
 
