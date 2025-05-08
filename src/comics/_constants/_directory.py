@@ -54,7 +54,7 @@ def _verify_endpoint(method):
 class directory:
     """Directory of registered comics in GoComics."""
 
-    _registered_comics = _read_json(FILE_PATH / "endpoints.json")
+    _registered_comics = _read_json(FILE_PATH / "_endpoints.json")
 
     @classmethod
     def listall(cls):
