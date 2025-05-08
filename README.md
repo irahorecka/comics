@@ -1,5 +1,15 @@
 # comics
 
+> [!CAUTION]
+> **DEPRECATION WARNING:**
+> In version 0.7.0, the builder-style methods `.date()` and `.random_date()` will be deprecated.
+> Please use the new single-call API:
+> 
+> ```python
+> comic = comics.search("calvinandhobbes", date="YYYY-MM-DD")
+> comic = comics.search("calvinandhobbes", date="random")
+> ```
+
 <p align="center">
   <img src="https://static.wikia.nocookie.net/garfield/images/8/83/GoComicsLogo.png/revision/latest/scale-to-width-down/2849?cb=20230628152535" width="50%"/>
 </p>
@@ -26,7 +36,7 @@ Find and download the Calvin and Hobbes comic strip published on January 2, 1990
 ```python
 import comics
 
-ch = comics.search("calvinandhobbes").date("January 2, 1990")
+ch = comics.search("calvinandhobbes", date="1990-01-02")
 ch.download("calvinandhobbes.png")
 ```
 
@@ -54,16 +64,16 @@ First, pass the desired endpoint to `comics.search`. For example, to search for 
 
 ## Search and download comics
 
-Then, search for a comic strip using the `date` or `random_date` method:
+Then, search for a comic strip by passing `date` into `search()`:
 
 ```python
 import comics
 
 # Get a Calvin and Hobbes comic strip by date
-ch = comics.search("calvinandhobbes").date("2013-05-13")  # Also accepts datetime object
+ch = comics.search("calvinandhobbes", date="2013-05-13")  # Also accepts datetime.date or datetime object
 
 # Get a random Calvin and Hobbes comic strip
-random_ch = comics.search("calvinandhobbes").random_date()
+random_ch = comics.search("calvinandhobbes", date="random")
 ```
 
 Finally, show, download, or stream the comic strip:
@@ -96,12 +106,12 @@ garfield.start_date
 # >>> "1978-06-19"
 ```
 
-An instantiated `search` class with `date` or `random_date` will have the following public attributes:
+An instantiated `search` class with `date` will have the following public attributes:
 
 ```python
 import comics
 
-garfield = comics.search("garfield").date("08/20/2000")
+garfield = comics.search("garfield", date="2000-08-20")
 garfield.endpoint
 # >>> "garfield"
 garfield.title
@@ -123,7 +133,7 @@ import comics
 from comics.exceptions import InvalidDateError
 
 try:
-    peanuts = comics.search("peanuts").date("1900-01-01")
+    peanuts = comics.search("peanuts", date="1900-01-01")
     peanuts.download()
 except InvalidDateError:
     print("Whoops, an invalid date was queried.")
@@ -136,7 +146,7 @@ import comics
 from comics.exceptions import InvalidEndpointError
 
 try:
-    invalid_comic = comics.search("invalid_endpoint").date("2000-01-01")
+    invalid_comic = comics.search("invalid_endpoint", date="2000-01-01")
     invalid_comic.download()
 except InvalidEndpointError:
     print("Whoops, an invalid endpoint was queried.")
