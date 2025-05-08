@@ -13,7 +13,8 @@ FILE_PATH = Path(__file__).resolve().parent
 
 
 def _read_json(filepath, **kwargs):
-    """Reads and returns .json filepath as dictionary.
+    """
+    Reads and returns .json filepath as dictionary.
 
     Args:
         filepath (str | pathlib.Path): Filepath of JSON file to read.
@@ -28,11 +29,13 @@ def _read_json(filepath, **kwargs):
 
 
 def _verify_endpoint(method):
-    """Wrapper to verify existence of a GoComics endpoint stored in variable endpoint."""
+    """
+    Wrapper to verify existence of a GoComics endpoint stored in variable endpoint."""
 
     @wraps(method)
     def wrapper(*args, **kwargs):
-        """Verifies user-specified GoComics endpoint is found in registered endpoints.
+        """
+        Verifies user-specified GoComics endpoint is found in registered endpoints.
 
         Returns:
             Any: The method called with all arguments and keyword arguments.
@@ -58,7 +61,8 @@ class directory:
 
     @classmethod
     def listall(cls):
-        """Returns every registered comic in GoComics.
+        """
+        Returns every registered comic in GoComics.
 
         Returns:
             tuple: Every registered comic in GoComics.
@@ -67,7 +71,8 @@ class directory:
 
     @classmethod
     def search(cls, key):
-        """Searches directory of registered comics in GoComics for keyword.
+        """
+        Searches directory of registered comics in GoComics for keyword.
 
         Args:
             key (str): Keyword to search directory for comic.
@@ -84,7 +89,8 @@ class directory:
     @classmethod
     @_verify_endpoint
     def get_title(cls, endpoint):
-        """Gets the title of a registered comic endpoint in GoComics.
+        """
+        Gets the title of a registered comic endpoint in GoComics.
 
         Args:
             endpoint (str): GoComics endpoint to query.
@@ -101,7 +107,8 @@ class directory:
     @classmethod
     @_verify_endpoint
     def get_start_date(cls, endpoint):
-        """Gets the publication start date of a registered comic endpoint in GoComics.
+        """
+        Gets the publication start date of a registered comic endpoint in GoComics.
 
         Args:
             endpoint (str): GoComics endpoint to query.
