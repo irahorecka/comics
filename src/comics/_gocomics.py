@@ -30,7 +30,8 @@ def bypass_comics_cache(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        """Checks and bypasses specific cached arguments for: 1. URL that starts with
+        """
+        Checks and bypasses specific cached arguments for: 1. URL that starts with
         the base random URL pattern; 2. If the requested URL requires stream.
 
         Returns:
@@ -45,18 +46,56 @@ def bypass_comics_cache(func):
 
 
 class search:
-    """Constructs user interface with GoComics."""
+    """
+    Constructs or dispatches user interface with GoComics.
 
-    def __init__(self, endpoint):
-        self.endpoint = endpoint
-        self.start_date = directory.get_start_date(self.endpoint)
-        self.title = directory.get_title(self.endpoint)
+    Deprecation: calling `.date()` or `.random_date()` on the builder is deprecated.
+    """
+
+    def __new__(cls, endpoint, date=None):
+        """
+        Constructs or dispatches user interface with GoComics.
+
+        Args:
+            endpoint (str): Comic strip endpoint.
+            date (datetime.datetime | str, optional): Comic strip date. Defaults to None.
+                If None, a builder is returned. If "random", a random date is used.
+                If a date string, it is parsed into a datetime object.
+
+        Raises:
+            InvalidDateError: If date is out of range for queried comic.
+
+        Returns:
+            search: Builder for dispatching user interface with GoComics.
+        """
+        # Initialize builder for dispatch
+        builder = super().__new__(cls)
+        # Set required attributes
+        builder.endpoint = endpoint
+        builder.start_date = directory.get_start_date(endpoint)
+        builder.title = directory.get_title(endpoint)
+        # Dispatch based on `date` argument
+        if date is None:
+            import warnings
+
+            warnings.warn(
+                "DeprecationWarning: The builder-style methods `.date()` and `.random_date()` are deprecated and will be removed in a future release.\n"
+                "Please use `search(endpoint, date='YYYY-MM-DD')` for specific dates or `search(endpoint, date='random')` for a random comic.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return builder
+        elif isinstance(date, str) and date.strip().lower() == "random":
+            return builder.random_date()
+        else:
+            return builder.date(date)
 
     def __repr__(self):
         return f'search(endpoint="{self.endpoint}", title="{self.title}")'
 
     def date(self, date):
-        """Constructs user interface with GoComics provided a comic strip date.
+        """
+        Constructs user interface with GoComics provided a comic strip date.
 
         Args:
             date (datetime.datetime | str): Comic strip date.
@@ -86,7 +125,8 @@ class search:
         return ComicsAPI(self.endpoint, self.title, date)
 
     def random_date(self, max_attempts=20):
-        """Constructs user interface with GoComics with a random comic strip date.
+        """
+        Constructs user interface with GoComics with a random comic strip date.
 
         Returns:
             ComicsAPI: ComicsAPI instance of comic strip published on a random date.
@@ -139,7 +179,8 @@ class ComicsAPI:
 
     @property
     def date(self):
-        """Returns string formatted comic strip date.
+        """
+        Returns string formatted comic strip date.
 
         Returns:
             str: String formatted comic strip date.
@@ -147,7 +188,8 @@ class ComicsAPI:
         return datetime.strftime(self._date, "%Y-%m-%d")
 
     def download(self, path=None):
-        """Downloads comic strip. Downloads as a PNG file if no image endpoint is specified.
+        """
+        Downloads comic strip. Downloads as a PNG file if no image endpoint is specified.
 
         Args:
             path (pathlib.Path | str, optional): Path to export file. If no path is specified,
@@ -177,7 +219,8 @@ class ComicsAPI:
             display(image)
 
     def stream(self):
-        """Streams comic strip response.
+        """
+        Streams comic strip response.
 
         Returns:
             requests.models.Response: Streamed comic strip response.
@@ -187,7 +230,8 @@ class ComicsAPI:
 
     @property
     def image_url(self):
-        """Gets comic strip image URL from GoComics.
+        """
+        Gets comic strip image URL from GoComics.
 
         Raises:
             InvalidDateError: If date is invalid for queried comic.
@@ -245,7 +289,8 @@ class ComicsAPI:
 
     @property
     def url(self):
-        """Constructs GoComics URL with date.
+        """
+        Constructs GoComics URL with date.
 
         Args:
             date (datetime.datetime): Date to query.
@@ -259,7 +304,8 @@ class ComicsAPI:
     @bypass_comics_cache
     @lru_cache(maxsize=128)
     def _get_response(self, *args, **kwargs):
-        """Gets response for queried GoComics URL.
+        """
+        Gets response for queried GoComics URL.
 
         Args:
             args (tuple): Arguments for requests.get.
