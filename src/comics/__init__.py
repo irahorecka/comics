@@ -3,8 +3,8 @@ comics
 ~~~~~~
 """
 
-from comics.constants import directory
-from comics.exceptions import InvalidDateError, InvalidEndpointError
-from comics.gocomics import search
+from ._constants import directory
+from ._gocomics import search
 
-__version__ = "0.5.5"
+__all__ = ["directory", "search"]
+__version__ = "0.6.0"
