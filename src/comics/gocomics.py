@@ -4,8 +4,8 @@ comics/gocomics
 """
 
 import contextlib
+import json
 import os
-import re
 from datetime import datetime, timedelta
 from functools import lru_cache, wraps
 from inspect import unwrap
@@ -223,18 +223,20 @@ class ComicsAPI:
                     f"GoComics silently served the {displayed_date} strip instead of the requested {self.date}."
                 )
 
-        # Primary method: look for comic image in viewer container
+        # Extract image URL from ld+json script tag within the correct container
         viewer_div = comic_html.find(
-            "div", class_=lambda c: c and c.startswith("ComicViewer_comicViewer__comic")
+            "div", class_=lambda c: c and c.startswith("ShowComicViewer_showComicViewer__comic")
         )
         if viewer_div:
-            img_tag = viewer_div.find("img")
-            src = img_tag.get("src") if img_tag else None
-            if img_tag and src:
-                # Always replace quality to 100 if present
-                if "quality=" in src:
-                    return re.sub(r"quality=\d+", "quality=100", src)
-                return src
+            script_tag = viewer_div.find("script", type="application/ld+json")
+            if script_tag:
+                try:
+                    json_data = json.loads(script_tag.string.strip())
+                    src = json_data.get("contentUrl")
+                    if src:
+                        return src
+                except Exception:
+                    pass
 
         # If all else fails, raise an error
         raise InvalidDateError(
