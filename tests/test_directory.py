@@ -9,8 +9,10 @@ import comics
 
 
 def test_directory_listall():
-    """Tests proper return of comic endpoints when calling comics.directory.listall
-    method."""
+    """
+    Tests proper return of comic endpoints when calling comics.directory.listall
+    method.
+    """
     all_comics = comics.directory.listall()
     # Number of comics registered in GoComics as of Apr. 2025 is 401
     assert len(all_comics) == 401
@@ -20,7 +22,8 @@ def test_directory_listall():
 
 @mark.parametrize("params", (("fox", 3), ("calvin", 2), ("se", 27), ("rm", 6), ("at", 35)))
 def test_directory_search(params):
-    """Tests proper return of comic endpoints when calling comics.directory.search
+    """
+    Tests proper return of comic endpoints when calling comics.directory.search
     method with search keywords (case insensitive).
 
     Args:

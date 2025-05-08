@@ -13,15 +13,19 @@ from comics.exceptions import InvalidDateError, InvalidEndpointError
 
 
 def test_invalid_endpoint():
-    """Tests proper raise of InvalidEndpointError when using an endpoint that does
-    not exist in GoComics."""
+    """
+    Tests proper raise of InvalidEndpointError when using an endpoint that does
+    not exist in GoComics.
+    """
     with pytest.raises(InvalidEndpointError):
         comics.search("invalid_endpoint").date("2000-01-01")
 
 
 def test_comic_not_found():
-    """Tests proper raise of InvalidDateError when using a date that does not exist
-    for the queried comic."""
+    """
+    Tests proper raise of InvalidDateError when using a date that does not exist
+    for the queried comic.
+    """
     with pytest.raises(InvalidDateError):
         invalid_foxtrot = comics.search("foxtrot").date(
             "2025-04-03"
@@ -30,8 +34,10 @@ def test_comic_not_found():
 
 
 def test_date_before_creation():
-    """Tests proper raise of InvalidDateError when using date that is before the
-    comic's creation date."""
+    """
+    Tests proper raise of InvalidDateError when using date that is before the
+    comic's creation date.
+    """
     with pytest.raises(InvalidDateError):
         comics.search("calvinandhobbes").date("1900-01-01")
 
