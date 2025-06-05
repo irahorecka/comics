@@ -4,7 +4,7 @@
 > **DEPRECATION WARNING:**
 > In version 0.7.0, the builder-style methods `.date()` and `.random_date()` will be deprecated.
 > Please use the new single-call API:
-> 
+>
 > ```python
 > comic = comics.search("calvinandhobbes", date="YYYY-MM-DD")
 > comic = comics.search("calvinandhobbes", date="random")
@@ -90,6 +90,31 @@ ch.download()
 ch.stream()
 ```
 
+### Retry logic
+
+If a comic strip fails to load due to CDN delays or missing image data, a retry mechanism is built into `download()`, `show()`, and `stream()`. You can control this behavior via:
+
+- `retries`: number of attempts before failing (default = 5)
+- `base_delay`: exponential backoff seed time in seconds (default = 0.5)
+
+This improves reliability when fetching newly released strips or handling transient issues.
+
+| Attempt | Wait Before Attempt (sec) | Cumulative Time (sec) |
+|---------|---------------------------|------------------------|
+| 1       | 0.0                       | 0.0                    |
+| 2       | 0.5                       | 0.5                    |
+| 3       | 1.0                       | 1.5                    |
+| 4       | 2.0                       | 3.5                    |
+| 5       | 4.0                       | 7.5                    |
+| 6       | 8.0                       | 15.5                   |
+
+Retry behavior can be customized per call:
+
+```python
+# Try 3 times total with shorter delay
+ch.download(retries=2, base_delay=0.25)
+```
+
 ## Attributes
 
 An instantiated `search` class will have the following public attributes:
@@ -154,8 +179,8 @@ except InvalidEndpointError:
 
 ## Contribute
 
-* [Issues Tracker](https://github.com/irahorecka/comics/issues)
-* [Source Code](https://github.com/irahorecka/comics/tree/main/comics)
+- [Issues Tracker](https://github.com/irahorecka/comics/issues)
+- [Source Code](https://github.com/irahorecka/comics/tree/main/comics)
 
 ## Support
 
