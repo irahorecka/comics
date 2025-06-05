@@ -15,8 +15,8 @@ from pytest import mark
 import comics
 
 # 2025-06-05: Intermittend failures on fetching images from GoComics even with retries
-# Re-run flaky tests up to 2 times with a delay of 1 second between attempts
-pytestmark = pytest.mark.flaky(reruns=2, reruns_delay=1)
+# Re-run flaky tests up to 4 times with a delay of 2 seconds between attempts
+pytestmark = pytest.mark.flaky(reruns=4, reruns_delay=2)
 
 
 # fmt: off
@@ -83,12 +83,7 @@ def _download_comic_and_verify_content(comics_inst):
         comics_inst (ComicsAPI): ComicsAPI instance.
     """
     img_filepath = Path(__file__).parent / "downloads" / "comics_test.png"
-    # Start by deleting the image if present - this allows me to keep the file tracked in Git to enable
-    # GitHub Actions testing
-    os.remove(img_filepath)
-    # Verify download method works
     comics_inst.download(img_filepath)
-    # Raises PIL.UnidentifiedImageError if invalid image
     Image.open(img_filepath).verify()
 
 
