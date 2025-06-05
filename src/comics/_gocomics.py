@@ -6,6 +6,8 @@ comics/_gocomics
 import contextlib
 import json
 import os
+import time
+import warnings
 from datetime import datetime, timedelta
 from functools import lru_cache, wraps
 from inspect import unwrap
@@ -58,12 +60,17 @@ class search:
 
         Args:
             endpoint (str): Comic strip endpoint.
-            date (datetime.datetime | str, optional): Comic strip date. Defaults to None.
-                If None, a builder is returned. If "random", a random date is used.
-                If a date string, it is parsed into a datetime object.
+            date (datetime.datetime | str, optional): Comic strip date. If None,
+                a builder is returned. If "random", a random date is used.
+                If a date string, it is parsed into a datetime object. Defaults to None.
 
         Raises:
             InvalidDateError: If date is out of range for queried comic.
+
+        Deprecation:
+            The builder-style methods `.date()` and `.random_date()` are deprecated.
+            Please use `search(endpoint, date='YYYY-MM-DD')` for specific dates or
+            `search(endpoint, date='random')` for a random comic.
 
         Returns:
             search: Builder for dispatching user interface with GoComics.
@@ -76,8 +83,6 @@ class search:
         builder.title = directory.get_title(endpoint)
         # Dispatch based on `date` argument
         if date is None:
-            import warnings
-
             warnings.warn(
                 "DeprecationWarning: The builder-style methods `.date()` and `.random_date()` are deprecated and will be removed in a future release.\n"
                 "Please use `search(endpoint, date='YYYY-MM-DD')` for specific dates or `search(endpoint, date='random')` for a random comic.",
@@ -127,6 +132,13 @@ class search:
     def random_date(self, max_attempts=20):
         """
         Constructs user interface with GoComics with a random comic strip date.
+
+        Args:
+            max_attempts (int): Maximum number of attempts to find a valid comic strip.
+                Defaults to 20.
+
+        Raises:
+            InvalidDateError: If no valid comic strip could be found after fallback attempts.
 
         Returns:
             ComicsAPI: ComicsAPI instance of comic strip published on a random date.
@@ -187,7 +199,7 @@ class ComicsAPI:
         """
         return datetime.strftime(self._date, "%Y-%m-%d")
 
-    def download(self, path=None):
+    def download(self, path=None, retries=5, base_delay=0.5):
         """
         Downloads comic strip. Downloads as a PNG file if no image endpoint is specified.
 
@@ -196,51 +208,104 @@ class ComicsAPI:
                 the comic will be exported to the current working directory as '{endpoint}.png',
                 with endpoint being the comic strip endpoint (e.g., Calvin and Hobbes -->
                 calvinandhobbes). Defaults to None.
+            retries (int): Number of retries if image not found. Defaults to 5.
+            base_delay (float): Base delay between retries. Defaults to 0.5 seconds.
+
+        Raises:
+            InvalidDateError: If no image URL could be found after retries.
         """
-        # Determine output path
+        # If path is None or directory, set default path to current working directory
         if path is None or os.path.isdir(path):
             path = os.path.join(path or os.getcwd(), f"{self.endpoint}.png")
 
-        # Fetch the high-res image bytes
-        response = self.stream()
+        response = self.stream(retries=retries, base_delay=base_delay)
         image = Image.open(BytesIO(response.content)).convert("RGB")
         image.save(path, format="PNG", quality=100)
 
-    def show(self):
-        """Shows comic strip in Jupyter notebook if available, otherwise opens in default image viewer."""
-        image = Image.open(BytesIO(self.stream().content)).convert("RGB")
+    def show(self, retries=5, base_delay=0.5):
+        """
+        Shows comic strip in Jupyter notebook if available, otherwise opens in default image viewer.
+
+        Args:
+            retries (int): Number of retries if image not found. Defaults to 5.
+            base_delay (float): Base delay between retries. Defaults to 0.5 seconds.
+
+        Raises:
+            InvalidDateError: If no image URL could be found after retries.
+        """
+        # Open the image in the default viewer if not in Jupyter notebook
+        image = Image.open(
+            BytesIO(self.stream(retries=retries, base_delay=base_delay).content)
+        ).convert("RGB")
         image.show()
+        # Else, display the image in Jupyter notebook if available
         with contextlib.suppress(ImportError, NameError):
-            # Attempt to import the display function from IPython.display
             from IPython.display import display
 
-            get_ipython  # This function is only available in an IPython environment
-            # Conversion to RGB prevents conversion error if file is a static GIF
+            get_ipython
             display(image)
 
-    def stream(self):
+    def stream(self, retries=5, base_delay=0.5):
         """
         Streams comic strip response.
+
+        Args:
+            retries (int): Number of retries if image not found. Defaults to 5.
+            base_delay (float): Base delay between retries. Defaults to 0.5 seconds.
+
+        Raises:
+            InvalidDateError: If no image URL could be found after retries.
 
         Returns:
             requests.models.Response: Streamed comic strip response.
         """
-        # Must be called for every image request
-        return self._get_response(self.image_url, stream=True)
+        return self._get_response(self.image_url_with_retries(retries, base_delay), stream=True)
 
-    @property
-    def image_url(self):
+    def image_url_with_retries(self, retries=5, base_delay=0.5):
         """
-        Gets comic strip image URL from GoComics.
+        Retry wrapper for image_url property.
+
+        Args:
+            retries (int): Number of retries if image not found. Defaults to 5.
+            base_delay (float): Base delay between retries. Defaults to 0.5 seconds.
 
         Raises:
-            InvalidDateError: If date is invalid for queried comic.
+            InvalidDateError: If no image URL could be found after retries.
 
         Returns:
             str: Comic strip image URL.
         """
-        # Get comic strip HTML
-        r = self._get_response(self.url)
+        # Retry logic for image_url property
+        for i in range(retries + 1):
+            try:
+                if i == 0:
+                    return self.image_url
+                else:
+                    r = unwrap(type(self)._get_response)(self, self.url)
+                    return self._extract_image_url_from_response(r)
+            # Handle specific InvalidDateError to retry
+            except InvalidDateError:
+                if i < retries:
+                    time.sleep(base_delay * (2**i))
+                else:
+                    raise InvalidDateError(
+                        f"Could not find image URL for {self.date} after {retries} retries."
+                    )
+
+    def _extract_image_url_from_response(self, r):
+        """
+        Extracts comic strip image URL from the response.
+
+        Args:
+            r (requests.models.Response): Response object from GoComics.
+
+        Raises:
+            InvalidDateError: If no image URL could be found for the requested date.
+
+        Returns:
+            str: Comic strip image URL.
+        """
+        # Get the HTML content of the comic strip page
         comic_html = BeautifulSoup(r.content, "html.parser")
 
         # GoComics silently serves today's comic at future URLs if the comic hasn't been published yet.
@@ -249,13 +314,16 @@ class ComicsAPI:
         date_button = comic_html.find(
             "button", class_=lambda c: c and "ButtonCalendar_buttonCalendar" in c
         )
+        # If the date button is not found, it means the comic strip is not available for the requested date
         if date_button:
-            displayed_text = date_button.get_text(strip=True)  # e.g., "Fri, Apr 4"
+            displayed_text = date_button.get_text(strip=True)
             try:
                 parsed = dateutil.parser.parse(displayed_text)
                 displayed_date = parsed.date()
-                # GoComics omits year in button display; infer it from context
-                if (displayed_date.month, displayed_date.day) < (self._date.month, self._date.day):
+                if (displayed_date.month, displayed_date.day) < (
+                    self._date.month,
+                    self._date.day,
+                ):
                     displayed_date = displayed_date.replace(year=self._date.year - 1)
                 else:
                     displayed_date = displayed_date.replace(year=self._date.year)
@@ -269,7 +337,8 @@ class ComicsAPI:
 
         # Extract image URL from ld+json script tag within the correct container
         viewer_div = comic_html.find(
-            "div", class_=lambda c: c and c.startswith("ShowComicViewer_showComicViewer__comic")
+            "div",
+            class_=lambda c: c and c.startswith("ShowComicViewer_showComicViewer__comic"),
         )
         if viewer_div:
             script_tag = viewer_div.find("script", type="application/ld+json")
@@ -288,12 +357,23 @@ class ComicsAPI:
         )
 
     @property
+    def image_url(self):
+        """
+        Returns comic strip image URL.
+
+        Raises:
+            InvalidDateError: If no image URL could be found for the requested date.
+
+        Returns:
+            str: Comic strip image URL.
+        """
+        r = self._get_response(self.url)
+        return self._extract_image_url_from_response(r)
+
+    @property
     def url(self):
         """
         Constructs GoComics URL with date.
-
-        Args:
-            date (datetime.datetime): Date to query.
 
         Returns:
             str: GoComics URL with date.
@@ -310,6 +390,9 @@ class ComicsAPI:
         Args:
             args (tuple): Arguments for requests.get.
             kwargs (dict): Keyword arguments for requests.get.
+
+        Raises:
+            InvalidDateError: If the comic strip is not found for the queried date.
 
         Returns:
             requests.models.Response: Response object for the queried URL.
