@@ -3,4 +3,5 @@ build
 flake8
 pylint
 pytest
+pytest-rerunfailures
 twine
