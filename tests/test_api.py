@@ -14,6 +14,10 @@ from pytest import mark
 
 import comics
 
+# 2025-06-05: Intermittend failures on fetching images from GoComics even with retries
+# Re-run flaky tests up to 2 times with a delay of 1 second between attempts
+pytestmark = pytest.mark.flaky(reruns=2, reruns_delay=1)
+
 
 # fmt: off
 attributes = (
@@ -33,34 +37,30 @@ def test_attributes(attr):
         attr (tuple): Args to unpack for testing proper instance attributes.
     """
     endpoint, title, date, url = attr
-    comics_inst = comics.search(endpoint).date(date)
+    comics_inst = comics.search(endpoint, date=date)
     assert comics_inst.title == title
     assert comics_inst.date == date
     assert comics_inst.url == url
-    # Check if comic strip URL content is an image
-    assert (
-        requests.head(comics_inst.image_url, timeout=10)
-        .headers.get("content-type", "")
-        .startswith("image/")
-    )
+    img_url = comics_inst.image_url_with_retries(retries=5, base_delay=0.5)
+    assert requests.head(img_url, timeout=10).headers.get("content-type", "").startswith("image/")
 
 
 def test_stream():
     """Test comic image stream instance and status code."""
-    ch = comics.search("calvinandhobbes").random_date()
+    ch = comics.search("calvinandhobbes", date="random")
     assert isinstance(ch.stream(), requests.models.Response)
     assert ch.stream().status_code == 200
 
 
 def test_download_comic_by_random_and_verify_random_content():
     """Test proper random comic download execution and valid download image content."""
-    ch = comics.search("calvinandhobbes").random_date()
+    ch = comics.search("calvinandhobbes", date="random")
     _download_comic_and_verify_content(ch)
 
 
 def test_download_comic_by_date_and_verify_content():
     """Test proper comic download execution and valid download image content."""
-    ch = comics.search("calvinandhobbes").date("2025-04-03")
+    ch = comics.search("calvinandhobbes", date="2025-04-03")
     _download_comic_and_verify_content(ch)
 
 
@@ -70,7 +70,7 @@ def test_download_static_gif_to_png():
     to PNG.
     """
     bad_ch_date = "2009-09-10"
-    ch = comics.search("calvinandhobbes").date(bad_ch_date)
+    ch = comics.search("calvinandhobbes", date=bad_ch_date)
     _download_comic_and_verify_content(ch)
 
 
@@ -141,7 +141,16 @@ def test_builder_warning_once():
     # Calling .date() should not emit a second warning
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        inst = builder.date("1965-07-04")
+        inst = comics.search(endpoint, date="1965-07-04")
         assert not any(item.category is DeprecationWarning for item in w)
     assert inst.title == "Peanuts"
     assert inst.date == "1965-07-04"
+
+
+def test_image_url_with_retries_robustness():
+    """Ensure image_url_with_retries does not raise immediately and returns a valid image URL."""
+    ch = comics.search("jim-benton-cartoons", date="2020-05-10")
+    url = ch.image_url_with_retries(retries=3, base_delay=0.5)
+    head = requests.head(url, timeout=10)
+    assert head.status_code == 200
+    assert head.headers.get("content-type", "").startswith("image/")

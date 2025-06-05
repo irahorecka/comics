@@ -18,7 +18,7 @@ def test_invalid_endpoint():
     not exist in GoComics.
     """
     with pytest.raises(InvalidEndpointError):
-        comics.search("invalid_endpoint").date("2000-01-01")
+        comics.search("invalid_endpoint", date="2000-01-01")
 
 
 def test_comic_not_found():
@@ -27,8 +27,8 @@ def test_comic_not_found():
     for the queried comic.
     """
     with pytest.raises(InvalidDateError):
-        invalid_foxtrot = comics.search("foxtrot").date(
-            "2025-04-03"
+        invalid_foxtrot = comics.search(
+            "foxtrot", date="2025-04-03"
         )  # Known to be a non-existent date for Foxtrot
         invalid_foxtrot.image_url
 
@@ -39,13 +39,13 @@ def test_date_before_creation():
     comic's creation date.
     """
     with pytest.raises(InvalidDateError):
-        comics.search("calvinandhobbes").date("1900-01-01")
+        comics.search("calvinandhobbes", date="1900-01-01")
 
 
 def test_invalid_future_date():
     """Tests proper raise of InvalidDateError when using date that is in the future."""
     with pytest.raises(InvalidDateError):
-        comics.search("calvinandhobbes").date("2050-01-01")
+        comics.search("calvinandhobbes", date="2050-01-01")
 
 
 def test_future_date_reroute():
