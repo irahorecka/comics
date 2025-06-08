@@ -350,6 +350,13 @@ class ComicsAPI:
                         return src
                 except Exception:
                     pass
+        
+        # Try extracting the image URL from the og:image property
+        meta = comic_html.find(
+                "meta",
+                property="og:image")
+        if meta:
+            return(meta['content'])
 
         # If all else fails, raise an error
         raise InvalidDateError(
