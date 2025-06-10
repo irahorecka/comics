@@ -3,8 +3,9 @@ comics
 ~~~~~~
 """
 
+from . import exceptions
 from ._constants import directory
 from ._gocomics import search
 
-__all__ = ["directory", "search"]
-__version__ = "0.7.1"
+__all__ = ["directory", "exceptions", "search"]
+__version__ = "0.8.0"
