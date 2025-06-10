@@ -1,15 +1,5 @@
 # comics
 
-> [!CAUTION]
-> **DEPRECATION WARNING:**
-> In version 0.7.0, the builder-style methods `.date()` and `.random_date()` will be deprecated.
-> Please use the new single-call API:
->
-> ```python
-> comic = comics.search("calvinandhobbes", date="YYYY-MM-DD")
-> comic = comics.search("calvinandhobbes", date="random")
-> ```
-
 <p align="center">
   <img src="https://static.wikia.nocookie.net/garfield/images/8/83/GoComicsLogo.png/revision/latest/scale-to-width-down/2849?cb=20230628152535" width="50%"/>
 </p>
@@ -155,12 +145,11 @@ An exception will be thrown if the queried date is unregistered or before the co
 
 ```python
 import comics
-from comics.exceptions import InvalidDateError
 
 try:
     peanuts = comics.search("peanuts", date="1900-01-01")
     peanuts.download()
-except InvalidDateError:
+except comics.exceptions.InvalidDateError:
     print("Whoops, an invalid date was queried.")
 ```
 
@@ -168,12 +157,11 @@ An exception will be thrown if the queried endpoint is unregistered:
 
 ```python
 import comics
-from comics.exceptions import InvalidEndpointError
 
 try:
     invalid_comic = comics.search("invalid_endpoint", date="2000-01-01")
     invalid_comic.download()
-except InvalidEndpointError:
+except comics.exceptions.InvalidEndpointError:
     print("Whoops, an invalid endpoint was queried.")
 ```
 
