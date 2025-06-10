@@ -3,8 +3,8 @@ tests/test_api
 ~~~~~~~~~~~~~~
 """
 
-import os
 import warnings
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -17,6 +17,50 @@ import comics
 # 2025-06-05: Intermittend failures on fetching images from GoComics even with retries
 # Re-run flaky tests up to 4 times with a delay of 2 seconds between attempts
 pytestmark = pytest.mark.flaky(reruns=4, reruns_delay=2)
+
+
+def test_search_requires_date():
+    """Test that search requires a date argument."""
+    # Calling without a date argument is now a TypeError
+    with pytest.raises(TypeError):
+        comics.search("peanuts")
+
+
+def test_search_with_valid_date_returns_comics_api():
+    """Test that search with a valid date returns a ComicsAPI instance."""
+    inst = comics.search("peanuts", date="1965-07-04")
+    assert isinstance(inst, comics._gocomics.ComicsAPI)
+    assert inst.title == "Peanuts"
+    assert inst.date == "1965-07-04"
+
+
+def test_search_with_invalid_date_before_start():
+    """Test that search with an invalid date before the start date raises an error."""
+    # Pick a date earlier than the comic's start date --> InvalidDateError
+    start = comics._constants.directory.get_start_date("peanuts")
+    before = (datetime.strptime(start, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+    with pytest.raises(comics.exceptions.InvalidDateError):
+        comics.search("peanuts", date=before)
+
+
+def test_search_with_invalid_date_in_future():
+    """Test that search with an invalid date in the future raises an error."""
+    future = (datetime.today().date() + timedelta(days=1)).strftime("%Y-%m-%d")
+    with pytest.raises(comics.exceptions.InvalidDateError):
+        comics.search("peanuts", date=future)
+
+
+def test_search_random_returns_comics_api_within_range():
+    """Test that search with 'random' returns a ComicsAPI instance with a valid date."""
+    inst = comics.search("peanuts", date="random")
+    assert isinstance(inst, comics._gocomics.ComicsAPI)
+    # Ensure returned date falls between start_date and today
+    dt = datetime.strptime(inst.date, "%Y-%m-%d").date()
+    start = datetime.strptime(
+        comics._constants.directory.get_start_date("peanuts"), "%Y-%m-%d"
+    ).date()
+    today = datetime.today().date()
+    assert start <= dt <= today
 
 
 # fmt: off
@@ -126,20 +170,6 @@ def test_direct_random_api_no_warning():
         datetime.strptime(inst.date, "%Y-%m-%d")
     except ValueError:
         assert False, f"Returned date {inst.date} is not a valid date string"
-
-
-def test_builder_warning_once():
-    endpoint = "peanuts"
-    # Should emit DeprecationWarning on builder instantiation
-    with pytest.warns(DeprecationWarning):
-        builder = comics.search(endpoint)
-    # Calling .date() should not emit a second warning
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        inst = comics.search(endpoint, date="1965-07-04")
-        assert not any(item.category is DeprecationWarning for item in w)
-    assert inst.title == "Peanuts"
-    assert inst.date == "1965-07-04"
 
 
 def test_image_url_with_retries_robustness():
