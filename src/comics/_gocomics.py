@@ -7,7 +7,6 @@ import contextlib
 import json
 import os
 import time
-import warnings
 from datetime import datetime, timedelta
 from functools import lru_cache, wraps
 from inspect import unwrap
@@ -50,27 +49,18 @@ def bypass_comics_cache(func):
 class search:
     """
     Constructs or dispatches user interface with GoComics.
-
-    Deprecation: calling `.date()` or `.random_date()` on the builder is deprecated.
     """
 
-    def __new__(cls, endpoint, date=None):
+    def __new__(cls, endpoint, date):
         """
         Constructs or dispatches user interface with GoComics.
 
         Args:
             endpoint (str): Comic strip endpoint.
-            date (datetime.datetime | str, optional): Comic strip date. If None,
-                a builder is returned. If "random", a random date is used.
-                If a date string, it is parsed into a datetime object. Defaults to None.
+            date (datetime.datetime | str): Comic strip date, or 'random' for a random comic.
 
         Raises:
             InvalidDateError: If date is out of range for queried comic.
-
-        Deprecation:
-            The builder-style methods `.date()` and `.random_date()` are deprecated.
-            Please use `search(endpoint, date='YYYY-MM-DD')` for specific dates or
-            `search(endpoint, date='random')` for a random comic.
 
         Returns:
             search: Builder for dispatching user interface with GoComics.
@@ -82,18 +72,9 @@ class search:
         builder.start_date = directory.get_start_date(endpoint)
         builder.title = directory.get_title(endpoint)
         # Dispatch based on `date` argument
-        if date is None:
-            warnings.warn(
-                "DeprecationWarning: The builder-style methods `.date()` and `.random_date()` are deprecated and will be removed in a future release.\n"
-                "Please use `search(endpoint, date='YYYY-MM-DD')` for specific dates or `search(endpoint, date='random')` for a random comic.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return builder
-        elif isinstance(date, str) and date.strip().lower() == "random":
+        if isinstance(date, str) and date.strip().lower() == "random":
             return builder.random_date()
-        else:
-            return builder.date(date)
+        return builder.date(date)
 
     def __repr__(self):
         return f'search(endpoint="{self.endpoint}", title="{self.title}")'
