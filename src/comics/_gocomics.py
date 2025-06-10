@@ -335,7 +335,12 @@ class ComicsAPI:
                     f"GoComics silently served the {displayed_date} strip instead of the requested {self.date}."
                 )
 
-        # Extract image URL from ld+json script tag within the correct container
+        # First, try extracting the image URL from the og:image property
+        meta = comic_html.find("meta", property="og:image")
+        if meta:
+            return meta["content"]
+
+        # If not found, try extracting image URL from ld+json script tag within the correct container
         viewer_div = comic_html.find(
             "div",
             class_=lambda c: c and c.startswith("ShowComicViewer_showComicViewer__comic"),
@@ -350,13 +355,6 @@ class ComicsAPI:
                         return src
                 except Exception:
                     pass
-        
-        # Try extracting the image URL from the og:image property
-        meta = comic_html.find(
-                "meta",
-                property="og:image")
-        if meta:
-            return(meta['content'])
 
         # If all else fails, raise an error
         raise InvalidDateError(
