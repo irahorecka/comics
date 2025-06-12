@@ -242,6 +242,20 @@ class ComicsAPI:
         """
         return self._get_response(self.image_url_with_retries(retries, base_delay), stream=True)
 
+    @property
+    def image_url(self):
+        """
+        Returns comic strip image URL.
+
+        Raises:
+            InvalidDateError: If no image URL could be found for the requested date.
+
+        Returns:
+            str: Comic strip image URL.
+        """
+        r = self._get_response(self.url)
+        return self._extract_image_url_from_response(r)
+
     def image_url_with_retries(self, retries=5, base_delay=0.5):
         """
         Retry wrapper for image_url property.
@@ -341,20 +355,6 @@ class ComicsAPI:
         raise InvalidDateError(
             f'"{self.date}" is not a valid date for comic "{self.title}" or image could not be found.'
         )
-
-    @property
-    def image_url(self):
-        """
-        Returns comic strip image URL.
-
-        Raises:
-            InvalidDateError: If no image URL could be found for the requested date.
-
-        Returns:
-            str: Comic strip image URL.
-        """
-        r = self._get_response(self.url)
-        return self._extract_image_url_from_response(r)
 
     @property
     def url(self):
