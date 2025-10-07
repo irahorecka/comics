@@ -13,6 +13,9 @@
 [![Licence](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/irahorecka/comics/main/LICENSE)
 [![tests](https://github.com/irahorecka/comics/actions/workflows/ci.yml/badge.svg)](https://github.com/irahorecka/comics/actions)
 
+> [!WARNING]
+> This library is currently broken due to anti-scraping measures implemented by GoComics. See [issue #16](https://github.com/irahorecka/comics/issues/16).
+
 ## Installation
 
 ```bash
