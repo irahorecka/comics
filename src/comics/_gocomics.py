@@ -23,7 +23,7 @@ from bs4 import BeautifulSoup
 from PIL import Image
 
 from ._constants import directory
-from .exceptions import InvalidDateError
+from .exceptions import InvalidDateError, PlaywrightError
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 _BASE_URL = "https://www.gocomics.com"
@@ -54,7 +54,7 @@ class search:
     Constructs or dispatches user interface with GoComics.
     """
 
-    def __new__(cls, endpoint, date):
+    def __new__(cls, endpoint, date, force_playwright=False):
         """
         Constructs or dispatches user interface with GoComics.
 
@@ -74,6 +74,7 @@ class search:
         builder.endpoint = endpoint
         builder.start_date = directory.get_start_date(endpoint)
         builder.title = directory.get_title(endpoint)
+        builder.force_playwright = force_playwright
         # Dispatch based on `date` argument
         if isinstance(date, str) and date.strip().lower() == "random":
             return builder.random_date()
@@ -111,7 +112,7 @@ class search:
                 f"Search for dates on or before {datetime.today().date()}. Your input: {datetime.strftime(date, '%Y-%m-%d')}"
             )
 
-        return ComicsAPI(self.endpoint, self.title, date)
+        return ComicsAPI(self.endpoint, self.title, date, self.force_playwright)
 
     def random_date(self, max_attempts=20):
         """
@@ -165,13 +166,14 @@ class search:
 class ComicsAPI:
     """User interface with GoComics."""
 
-    def __init__(self, endpoint, title, date):
+    def __init__(self, endpoint, title, date, force_playwright=False):
         self.endpoint = endpoint
         self.title = title
         self._date = date
+        self._force_playwright = force_playwright
 
     def __repr__(self):
-        return f'ComicsAPI(endpoint="{self.endpoint}", title="{self.title}", date="{self.date}")'
+        return f'ComicsAPI(endpoint="{self.endpoint}", title="{self.title}", date="{self.date()}")'
 
     @property
     def date(self):
@@ -262,8 +264,11 @@ class ComicsAPI:
         """
         try:
             r = self._get_response_playwright(self.url)
-        except Exception:
-            r = self._get_response(self.url)
+        except Exception as ex:
+            if self._force_playwright is True:
+                raise PlaywrightError from ex
+            else:
+                r = self._get_response(self.url)
 
         return self._extract_image_url_from_response(r)
 
@@ -289,8 +294,11 @@ class ComicsAPI:
                 else:
                     try:
                         r = unwrap(type(self)._get_response_playwright)(self, self.url)
-                    except Exception:
-                        r = unwrap(type(self)._get_response)(self, self.url)
+                    except Exception as ex:
+                        if self._force_playwright is True:
+                            raise PlaywrightError from ex
+                        else:
+                            r = unwrap(type(self)._get_response)(self, self.url)
                     return self._extract_image_url_from_response(r)
             # Handle specific InvalidDateError to retry
             except InvalidDateError:
