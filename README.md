@@ -13,14 +13,17 @@
 [![Licence](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/irahorecka/comics/main/LICENSE)
 [![tests](https://github.com/irahorecka/comics/actions/workflows/ci.yml/badge.svg)](https://github.com/irahorecka/comics/actions)
 
-> [!WARNING]
-> This library is currently broken due to anti-scraping measures implemented by GoComics. See [issue #16](https://github.com/irahorecka/comics/issues/16).
-
 ## Installation
 
 ```bash
 pip install comics
 ```
+
+> [!NOTE]
+> Playwright must be installed after installing `comics` to enable browser-based features:
+> ```
+> python -m playwright install --with-deps
+> ```
 
 ## Quick start
 
@@ -166,6 +169,18 @@ try:
     invalid_comic.download()
 except comics.exceptions.InvalidEndpointError:
     print("Whoops, an invalid endpoint was queried.")
+```
+
+An exception will be thrown if Playwright fails to fetch a comic (e.g., browser not installed or page error):
+
+```python
+import comics
+
+try:
+    garfield = comics.search("garfield", date="2020-05-05", force_playwright=True)
+    garfield.download()
+except comics.exceptions.ComicsPlaywrightError:
+    print("Playwright failed to fetch the page. Check your Playwright installation.")
 ```
 
 ## Contribute
