@@ -384,10 +384,19 @@ class ComicsAPI:
 
     @bypass_comics_cache
     @lru_cache(maxsize=128)
-    def _get_response_playwright(self, *args, **kwargs):
-        # Define headers to accept webp images - highest quality
-        headers = kwargs.pop("headers", {})
-        headers.setdefault("Accept", "image/webp,image/apng,image/*,*/*;q=0.8")
+    def _get_response_playwright(self, url):
+        """
+        Gets response for queried GoComics URL (using PlayWright).
+
+        Args:
+            url (str): Argument for page.goto.
+
+        Raises:
+            Exception: If there was an error getting the comic.
+
+        Returns:
+            requests.models.Response: Response object for the queried URL.
+        """
         with sync_playwright() as p:
             # Try any of the following browsers. If one of them succeeds, go ahead, if not then ignore the result.
             playwrightErrorNum = 0
@@ -395,7 +404,7 @@ class ComicsAPI:
                 try:
                     browser = browser_type.launch()
                     page = browser.new_page()
-                    r = page.goto(*args)
+                    r = page.goto(url)
                     if r is not None:
                         if r.status >= 400 and r.status < 600:
                             raise Exception(r.status_text)
@@ -422,6 +431,19 @@ class ComicsAPI:
     @bypass_comics_cache
     @lru_cache(maxsize=128)
     def _get_response(self, *args, **kwargs):
+        """
+        Gets response for queried URL (using requests).
+
+        Args:
+            args (tuple): Arguments for requests.get.
+            kwargs (dict): Keyword arguments for requests.get.
+
+        Raises:
+            InvalidDateError: If the comic strip is not found for the queried date.
+
+        Returns:
+            requests.models.Response: Response object for the queried URL.
+        """
         headers = kwargs.pop("headers", {})
         headers.setdefault("Accept", "image/webp,image/apng,image/*,*/*;q=0.8")
         r = requests.get(*args, headers=headers, verify=False, timeout=10)
