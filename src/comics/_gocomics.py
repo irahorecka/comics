@@ -13,7 +13,11 @@ from inspect import unwrap
 from io import BytesIO
 from random import randint
 from unittest.mock import MagicMock
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import (
+    sync_playwright,
+    Error as PlaywrightError,
+    TimeoutError as PlaywrightTimeoutError,
+)
 
 import dateutil.parser
 import requests
@@ -23,7 +27,7 @@ from bs4 import BeautifulSoup
 from PIL import Image
 
 from ._constants import directory
-from .exceptions import InvalidDateError, PlaywrightError
+from .exceptions import ComicsPlaywrightError, InvalidDateError
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 _BASE_URL = "https://www.gocomics.com"
@@ -61,6 +65,9 @@ class search:
         Args:
             endpoint (str): Comic strip endpoint.
             date (datetime.datetime | str): Comic strip date, or 'random' for a random comic.
+            force_playwright (bool): Whether to force using Playwright for fetching
+                comic strip pages; defaults to requesting via `requests` if playwright
+                is not installed. Defaults to False.
 
         Raises:
             InvalidDateError: If date is out of range for queried comic.
@@ -190,7 +197,7 @@ class ComicsAPI:
         Downloads comic strip. Downloads as a PNG file if no image endpoint is specified.
 
         Args:
-            path (pathlib.Path | str, optional): Path to export file. If no path is specified,
+            path (pathlib.Path | str): Path to export file. If no path is specified,
                 the comic will be exported to the current working directory as '{endpoint}.png',
                 with endpoint being the comic strip endpoint (e.g., Calvin and Hobbes -->
                 calvinandhobbes). Defaults to None.
@@ -247,26 +254,25 @@ class ComicsAPI:
         """
         # note: we don't need playwright to get image streams; which is good
         # because playwright doesn't let us get the raw bytes of the page anyways.
-        return self._get_response(
-            self.image_url_with_retries(retries, base_delay), stream=True
-        )
+        return self._get_response(self.image_url_with_retries(retries, base_delay), stream=True)
 
     @property
     def image_url(self):
         """
-        Returns comic strip image URL.
+        Returns comic strip image URL. Fetches page using Playwright first, then falls back to requests
+        if Playwright is not forced; otherwise, raises PlaywrightError.
 
         Raises:
-            InvalidDateError: If no image URL could be found for the requested date.
+            ComicsPlaywrightError: If no image URL could be found for the requested date.
 
         Returns:
             str: Comic strip image URL.
         """
         try:
             r = self._get_response_playwright(self.url)
-        except Exception as ex:
+        except PlaywrightError as ex:
             if self._force_playwright is True:
-                raise PlaywrightError from ex
+                raise ComicsPlaywrightError from ex
             else:
                 r = self._get_response(self.url)
 
@@ -282,6 +288,7 @@ class ComicsAPI:
 
         Raises:
             InvalidDateError: If no image URL could be found after retries.
+            ComicsPlaywrightError: If no image URL could be found for the requested date.
 
         Returns:
             str: Comic strip image URL.
@@ -294,9 +301,9 @@ class ComicsAPI:
                 else:
                     try:
                         r = unwrap(type(self)._get_response_playwright)(self, self.url)
-                    except Exception as ex:
+                    except PlaywrightError as ex:
                         if self._force_playwright is True:
-                            raise PlaywrightError from ex
+                            raise ComicsPlaywrightError from ex
                         else:
                             r = unwrap(type(self)._get_response)(self, self.url)
                     return self._extract_image_url_from_response(r)
@@ -360,19 +367,16 @@ class ComicsAPI:
         # If not found, try extracting image URL from ld+json script tag within the correct container
         viewer_div = comic_html.find(
             "div",
-            class_=lambda c: c
-            and c.startswith("ShowComicViewer_showComicViewer__comic"),
+            class_=lambda c: c and c.startswith("ShowComicViewer_showComicViewer__comic"),
         )
         if viewer_div:
             script_tag = viewer_div.find("script", type="application/ld+json")
             if script_tag:
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     json_data = json.loads(script_tag.string.strip())
                     src = json_data.get("contentUrl")
                     if src:
                         return src
-                except Exception:
-                    pass
 
         # If all else fails, raise an error
         raise InvalidDateError(
@@ -400,41 +404,37 @@ class ComicsAPI:
             url (str): Argument for page.goto.
 
         Raises:
-            Exception: If there was an error getting the comic.
+            PlaywrightError: If Playwright encounters an error or the page is not found.
 
         Returns:
             requests.models.Response: Response object for the queried URL.
         """
         with sync_playwright() as p:
             # Try any of the following browsers. If one of them succeeds, go ahead, if not then ignore the result.
-            playwrightErrorNum = 0
-            for browser_type in [p.webkit, p.firefox, p.chromium]:
+            browsers = [p.webkit, p.firefox, p.chromium]
+            for browser in browsers:
                 try:
-                    browser = browser_type.launch()
-                    page = browser.new_page()
+                    launched_browser = browser.launch()
+                    page = launched_browser.new_page()
                     r = page.goto(url)
                     if r is not None:
                         if r.status >= 400 and r.status < 600:
-                            raise Exception(r.status_text)
+                            print(f"HTTP error {r.status} for {url} with {browser.name}")
+                            continue
                         st = page.content()
-                        browser.close()
+                        launched_browser.close()
                         resp = Response()
                         resp = MagicMock(spec=Response)
                         resp.status_code = 400
                         resp.text = st
                         resp.content = str.encode(st)
                         return resp
-                except Exception as ex:
-                    # if there's a better way to check this error then it doesn't seem like playwright will let us use it.
-                    if "executable doesn't exist" in str(ex).lower():
-                        playwrightErrorNum += 1
-                    else:
-                        raise ex
+                except (PlaywrightError, PlaywrightTimeoutError) as ex:
+                    print(f"Playwright error with {browser.name}: {ex}")
 
-        if playwrightErrorNum >= 3:
-            raise PlaywrightNotInstalledError("")
-
-        return None
+            raise PlaywrightError(
+                f"Playwright failed to launch on {', '.join([b.name for b in browsers])}.\nMake sure Playwright is installed and set up correctly."
+            )
 
     @bypass_comics_cache
     @lru_cache(maxsize=128)
