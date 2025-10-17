@@ -433,7 +433,7 @@ class ComicsAPI:
                     print(f"Playwright error with {browser.name}: {ex}")
 
             raise PlaywrightError(
-                f"Playwright failed to launch on {', '.join([b.name for b in browsers])}.\nMake sure Playwright is installed and set up correctly."
+                "Ensure Playwright browsers are installed by running:\n\n    python -m playwright install --with-deps\n\nThis installs the required browser binaries."
             )
 
     @bypass_comics_cache
