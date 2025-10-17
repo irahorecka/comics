@@ -19,6 +19,13 @@
 pip install comics
 ```
 
+> [!WARNING]
+> **Breaking changes in v0.9.0:**
+> This release fixes a fatal issue that caused all previous versions to stop working. Upgrading is required.
+> ```
+> pip install comics --upgrade
+> ```
+
 > [!NOTE]
 > Playwright must be installed after installing `comics` to enable browser-based features:
 > ```
