@@ -13,6 +13,7 @@ from PIL import Image
 from pytest import mark
 
 import comics
+from comics._gocomics import bypass_comics_cache, ComicsAPI
 
 # 2025-06-05: Intermittend failures on fetching images from GoComics even with retries
 # Re-run flaky tests up to 4 times with a delay of 2 seconds between attempts
@@ -164,7 +165,6 @@ def test_direct_random_api_no_warning():
     assert isinstance(inst.title, str)
     assert len(inst.date) == 10  # Expecting 'YYYY-MM-DD'
     # Optionally check date format
-    from datetime import datetime
 
     try:
         datetime.strptime(inst.date, "%Y-%m-%d")
@@ -179,3 +179,53 @@ def test_image_url_with_retries_robustness():
     head = requests.head(url, timeout=10)
     assert head.status_code == 200
     assert head.headers.get("content-type", "").startswith("image/")
+
+
+def test_bypass_comics_cache(monkeypatch):
+    """
+    Test that bypass_comics_cache decorator bypasses cache for stream=True.
+    """
+    called = {}
+
+    def dummy_func(*args, **kwargs):
+        called["called"] = True
+        return "streamed"
+
+    wrapped = bypass_comics_cache(dummy_func)
+    # Should call the original function if stream=True
+    result = wrapped("foo", stream=True)
+    assert called.get("called")
+    assert result == "streamed"
+
+
+def test_comicsapi_url_property():
+    """
+    Test ComicsAPI.url property returns correct URL.
+    """
+    date = datetime(2022, 5, 4).date()
+    api = ComicsAPI("calvinandhobbes", "Calvin and Hobbes", date)
+    expected_url = "https://www.gocomics.com/calvinandhobbes/2022/05/04"
+    assert api.url == expected_url
+
+
+def test_extract_image_url_from_meta():
+    """
+    Test ComicsAPI._extract_image_url_from_response extracts og:image meta.
+    """
+
+    class DummyResp:
+        def __init__(self, html):
+            self.content = html.encode("utf-8")
+
+    # HTML with og:image meta
+    html = """
+    <html>
+      <head>
+        <meta property="og:image" content="https://img.comic.com/strip.png"/>
+      </head>
+      <body></body>
+    </html>
+    """
+    api = ComicsAPI("foo", "Foo", datetime(2022, 1, 1).date())
+    url = api._extract_image_url_from_response(DummyResp(html))
+    assert url == "https://img.comic.com/strip.png"

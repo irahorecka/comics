@@ -12,9 +12,5 @@ class InvalidEndpointError(Exception):
     """An invalid GoComics endpoint was queried."""
 
 
-class PlaywrightError(Exception):
-    """Playwright encountered an error"""
-
-
-class PlaywrightNotInstalledError(Exception):
-    """Playwright was not installed. Run `playright install` to install."""
+class ComicsPlaywrightError(Exception):
+    """An error occurred while making a request to the GoComics API using Playwright."""
