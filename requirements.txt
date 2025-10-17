@@ -3,3 +3,4 @@ ipython
 pillow
 python-dateutil
 requests
+playwright
