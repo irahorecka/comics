@@ -95,8 +95,19 @@ def test_playwright_error_spoof(monkeypatch):
 
     # Create a ComicsAPI that forces playwright usage and assert the wrapped error
     comic = comics.search("foxtrot", date="2025-01-01", force_playwright=True)
-    with pytest.raises(comics.exceptions.ComicsPlaywrightError):
+    with pytest.raises(comics.exceptions.ComicsPlaywrightError) as excinfo:
         _ = comic.image_url
+    # Ensure the wrapped error preserves the original Playwright message
+    assert "forced failure" in str(excinfo.value)
+
+
+def test_comics_playwright_error_str_uses_cause():
+    """When raised without a message, ComicsPlaywrightError.__str__ falls back to the cause."""
+    cause = PlaywrightError("inner cause message")
+    try:
+        raise comics.exceptions.ComicsPlaywrightError() from cause
+    except comics.exceptions.ComicsPlaywrightError as e:
+        assert "inner cause message" in str(e)
 
 
 def test_playwright_failure_falls_back(monkeypatch):

@@ -272,7 +272,8 @@ class ComicsAPI:
             r = self._get_response_playwright(self.url)
         except PlaywrightError as ex:
             if self._force_playwright is True:
-                raise ComicsPlaywrightError from ex
+                # Preserve original Playwright error message for visibility
+                raise ComicsPlaywrightError(str(ex)) from ex
             else:
                 r = self._get_response(self.url)
 
@@ -303,7 +304,8 @@ class ComicsAPI:
                         r = unwrap(type(self)._get_response_playwright)(self, self.url)
                     except PlaywrightError as ex:
                         if self._force_playwright is True:
-                            raise ComicsPlaywrightError from ex
+                            # Preserve original Playwright error message for visibility
+                            raise ComicsPlaywrightError(str(ex)) from ex
                         else:
                             r = unwrap(type(self)._get_response)(self, self.url)
                     return self._extract_image_url_from_response(r)
@@ -410,15 +412,16 @@ class ComicsAPI:
             requests.models.Response: Response object for the queried URL.
         """
         with sync_playwright() as p:
-            # Try any of the following browsers. If one of them succeeds, go ahead, if not then ignore the result.
+            # Try any of the following browsers. If one of them succeeds, go ahead; otherwise collect the last error.
             browsers = [p.webkit, p.firefox, p.chromium]
+            last_error = None
             for browser in browsers:
                 try:
                     launched_browser = browser.launch()
                     page = launched_browser.new_page()
                     r = page.goto(url)
                     if r is not None:
-                        if r.status >= 400 and r.status < 600:
+                        if 400 <= r.status < 600:
                             print(f"HTTP error {r.status} for {url} with {browser.name}")
                             continue
                         st = page.content()
@@ -430,11 +433,19 @@ class ComicsAPI:
                         resp.content = str.encode(st)
                         return resp
                 except (PlaywrightError, PlaywrightTimeoutError) as ex:
+                    last_error = ex
                     print(f"Playwright error with {browser.name}: {ex}")
 
-            raise PlaywrightError(
-                "Ensure Playwright browsers are installed by running:\n\n    python -m playwright install --with-deps\n\nThis installs the required browser binaries."
+            base_msg = (
+                "Ensure Playwright browsers are installed by running:\n\n"
+                "    python -m playwright install --with-deps\n\n"
+                "This installs the required browser binaries."
             )
+            if last_error is not None:
+                # Include the last error to provide actionable context to callers
+                raise PlaywrightError(f"{last_error}\n\n{base_msg}") from last_error
+
+            raise PlaywrightError(base_msg)
 
     @bypass_comics_cache
     @lru_cache(maxsize=128)

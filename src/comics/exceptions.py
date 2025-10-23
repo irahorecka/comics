@@ -14,3 +14,11 @@ class InvalidEndpointError(Exception):
 
 class ComicsPlaywrightError(Exception):
     """An error occurred while making a request to the GoComics API using Playwright."""
+
+    # Ensure str(e) is informative even when raised as `raise ComicsPlaywrightError from ex`.
+    def __str__(self):
+        msg = super().__str__()
+        if msg:
+            return msg
+        cause = getattr(self, "__cause__", None)
+        return str(cause) if cause else ""
