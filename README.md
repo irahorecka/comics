@@ -20,8 +20,8 @@ pip install comics
 ```
 
 > [!WARNING]
-> **Breaking changes in v0.9.1:**
-> This release fixes a fatal issue that caused all previous versions to stop working. Upgrading is required.
+> **Breaking changes since v0.9.1**
+> Versions prior to v0.9.1 are incompatible due to an upstream change. Upgrading to the latest release is required.
 > ```
 > pip install comics --upgrade
 > ```
