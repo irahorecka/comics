@@ -2,6 +2,7 @@ name: tests
 
 on:
   push:
+  pull_request:
   workflow_dispatch:
   schedule:
     # Schedule for the workflow to run at 00:00 every Sunday
