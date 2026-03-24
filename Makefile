@@ -1,4 +1,4 @@
-black: ## Black format every python file to line length 100
+format: ## Black format every python file to line length 100
 	find . -type f -name "*.py" | xargs black --line-length=100
 	make clean
 
