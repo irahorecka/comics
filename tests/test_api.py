@@ -231,6 +231,30 @@ def test_extract_image_url_from_meta():
     assert url == "https://img.comic.com/strip.png"
 
 
+def test_extract_image_url_raises_on_canonical_date_mismatch():
+    """
+    Test that _extract_image_url_from_response raises InvalidDateError when the
+    canonical URL date does not match the requested date (GoComics silent reroute).
+    """
+
+    class DummyResp:
+        def __init__(self, html):
+            self.content = html.encode("utf-8")
+
+    html = """
+    <html>
+      <head>
+        <link rel="canonical" href="https://www.gocomics.com/brewsterrockit/2026/03/24"/>
+        <meta property="og:image" content="https://img.comic.com/strip.png"/>
+      </head>
+      <body></body>
+    </html>
+    """
+    api = ComicsAPI("brewsterrockit", "Brewster Rockit", datetime(2030, 12, 31).date())
+    with pytest.raises(comics.exceptions.InvalidDateError):
+        api._extract_image_url_from_response(DummyResp(html))
+
+
 def test_image_url_regression_garfield_2025_10_10():
     """
     Regression test for image_url failing on a real GoComics page.
