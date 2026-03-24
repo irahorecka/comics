@@ -6,6 +6,7 @@ comics/_gocomics
 import contextlib
 import json
 import os
+import re
 import time
 from datetime import datetime, timedelta
 from functools import lru_cache, wraps
@@ -336,30 +337,20 @@ class ComicsAPI:
 
         # GoComics silently serves today's comic at future URLs if the comic hasn't been published yet.
         # This is a server-side reroute (not an HTTP redirect), so we can't detect it via response URL.
-        # To catch this, we extract the displayed calendar date and compare it with the requested date.
-        date_button = comic_html.find(
-            "button", class_=lambda c: c and "ButtonCalendar_buttonCalendar" in c
-        )
-        # If the date button is not found, it means the comic strip is not available for the requested date
-        if date_button:
-            displayed_text = date_button.get_text(strip=True)
-            try:
-                parsed = dateutil.parser.parse(displayed_text)
-                displayed_date = parsed.date()
-                if (displayed_date.month, displayed_date.day) < (
-                    self._date.month,
-                    self._date.day,
-                ):
-                    displayed_date = displayed_date.replace(year=self._date.year - 1)
-                else:
-                    displayed_date = displayed_date.replace(year=self._date.year)
-            except ValueError:
-                displayed_date = None
-
-            if displayed_date and displayed_date != self._date:
-                raise InvalidDateError(
-                    f"GoComics silently served the {displayed_date} strip instead of the requested {self.date}."
-                )
+        # Primary check: extract the actual date from the canonical link URL.
+        canonical = comic_html.find("link", rel="canonical")
+        if canonical and canonical.get("href"):
+            url_date_match = re.search(r"/(\d{4})/(\d{2})/(\d{2})", canonical["href"])
+            if url_date_match:
+                served_date = datetime(
+                    int(url_date_match.group(1)),
+                    int(url_date_match.group(2)),
+                    int(url_date_match.group(3)),
+                ).date()
+                if served_date != self._date:
+                    raise InvalidDateError(
+                        f"GoComics silently served the {served_date} strip instead of the requested {self.date}."
+                    )
 
         # First, try extracting the image URL from the og:image property
         meta = comic_html.find("meta", property="og:image")
