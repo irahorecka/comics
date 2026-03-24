@@ -229,3 +229,13 @@ def test_extract_image_url_from_meta():
     api = ComicsAPI("foo", "Foo", datetime(2022, 1, 1).date())
     url = api._extract_image_url_from_response(DummyResp(html))
     assert url == "https://img.comic.com/strip.png"
+
+
+def test_image_url_regression_garfield_2025_10_10():
+    """
+    Regression test for image_url failing on a real GoComics page.
+    """
+    comic = comics.search("garfield", date="2025-10-10")
+    url = comic.image_url
+    assert isinstance(url, str)
+    assert url.startswith("http")
