@@ -181,7 +181,7 @@ class ComicsAPI:
         self._force_playwright = force_playwright
 
     def __repr__(self):
-        return f'ComicsAPI(endpoint="{self.endpoint}", title="{self.title}", date="{self.date()}")'
+        return f'ComicsAPI(endpoint="{self.endpoint}", title="{self.title}", date="{self.date}")'
 
     @property
     def date(self):
