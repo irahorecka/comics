@@ -391,6 +391,16 @@ class ComicsAPI:
                         if 400 <= r.status < 600:
                             print(f"HTTP error {r.status} for {url} with {browser.name}")
                             continue
+                        # Wait for BunnyCDN JS challenge to complete.
+                        # The challenge page sets data-pow on <body>; the real
+                        # comic page does not. We wait until it disappears,
+                        # which signals the PoW was submitted and the CDN
+                        # redirected back to the actual page.
+                        with contextlib.suppress(PlaywrightTimeoutError):
+                            page.wait_for_function(
+                                "() => !document.body.hasAttribute('data-pow')",
+                                timeout=20000,
+                            )
                         st = page.content()
                         resp = MagicMock(spec=Response)
                         resp.status_code = 400
@@ -434,9 +444,8 @@ class ComicsAPI:
             requests.models.Response: Response object for the queried URL.
         """
         headers = kwargs.pop("headers", {})
-        # Use browser-like headers to avoid BunnyCDN Bunny Shield challenge pages.
-        # Without a real User-Agent and browser Accept header, GoComics's CDN returns
-        # a JS proof-of-work challenge (HTTP 200) instead of the comic page.
+        # Use browser-like headers as a best-effort fallback when Playwright is unavailable.
+        # Note: requests cannot solve BunnyCDN's JS proof-of-work challenge — only Playwright can.
         headers.setdefault(
             "User-Agent",
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
