@@ -122,16 +122,12 @@ class search:
 
         return ComicsAPI(self.endpoint, self.title, date, self.force_playwright)
 
-    def random_date(self, max_attempts=20):
+    def random_date(self):
         """
         Constructs user interface with GoComics with a random comic strip date.
 
-        Args:
-            max_attempts (int): Maximum number of attempts to find a valid comic strip.
-                Defaults to 20.
-
         Raises:
-            InvalidDateError: If no valid comic strip could be found after fallback attempts.
+            InvalidDateError: If the randomly selected date is out of range.
 
         Returns:
             ComicsAPI: ComicsAPI instance of comic strip published on a random date.
@@ -140,35 +136,13 @@ class search:
         today = datetime.today().date()
         start = datetime.strptime(self.start_date, "%Y-%m-%d").date()
 
-        # Step 1: Try full-range random dates
-        for _ in range(max_attempts):
-            rand_days = randint(0, (today - start).days)
-            date = start + timedelta(days=rand_days)
-            try:
-                # Attempt to get comic strip for random date
-                potential_comic = self.date(date)
-                if potential_comic.image_url:
-                    return potential_comic
-            except (InvalidDateError, requests.exceptions.HTTPError):
-                continue
-
-        # Step 2: Fallback to past year
-        fallback_start = today - timedelta(days=365)
-        tried_offsets = set()
-        while len(tried_offsets) < 365:
-            offset = randint(0, 364)
-            if offset in tried_offsets:
-                continue
-            tried_offsets.add(offset)
-            date = fallback_start + timedelta(days=offset)
-            try:
-                potential_comic = self.date(date)
-                if potential_comic.image_url:
-                    return potential_comic
-            except (InvalidDateError, requests.exceptions.HTTPError):
-                continue
-
-        raise InvalidDateError("Could not find a valid comic after fallback attempts.")
+        # Pick a random date within the comic's full publication range.
+        # No network validation here — date arithmetic is sufficient.
+        # Eagerly fetching image_url per attempt caused O(N) HTTP requests,
+        # which triggered rate limiting in CI where many parallel runs hit
+        # GoComics simultaneously.
+        rand_days = randint(0, (today - start).days)
+        return self.date(start + timedelta(days=rand_days))
 
 
 class ComicsAPI:
@@ -181,7 +155,7 @@ class ComicsAPI:
         self._force_playwright = force_playwright
 
     def __repr__(self):
-        return f'ComicsAPI(endpoint="{self.endpoint}", title="{self.title}", date="{self.date()}")'
+        return f'ComicsAPI(endpoint="{self.endpoint}", title="{self.title}", date="{self.date}")'
 
     @property
     def date(self):
@@ -407,17 +381,17 @@ class ComicsAPI:
             browsers = [p.webkit, p.firefox, p.chromium]
             last_error = None
             for browser in browsers:
+                launched_browser = None
                 try:
                     launched_browser = browser.launch()
                     page = launched_browser.new_page()
-                    r = page.goto(url)
+                    # Explicit timeout prevents indefinite hangs in CI (default is 30s per action).
+                    r = page.goto(url, timeout=15000)
                     if r is not None:
                         if 400 <= r.status < 600:
                             print(f"HTTP error {r.status} for {url} with {browser.name}")
                             continue
                         st = page.content()
-                        launched_browser.close()
-                        resp = Response()
                         resp = MagicMock(spec=Response)
                         resp.status_code = 400
                         resp.text = st
@@ -426,6 +400,10 @@ class ComicsAPI:
                 except (PlaywrightError, PlaywrightTimeoutError) as ex:
                     last_error = ex
                     print(f"Playwright error with {browser.name}: {ex}")
+                finally:
+                    if launched_browser is not None:
+                        with contextlib.suppress(Exception):
+                            launched_browser.close()
 
             base_msg = (
                 "Ensure Playwright browsers are installed by running:\n\n"
@@ -449,17 +427,39 @@ class ComicsAPI:
             kwargs (dict): Keyword arguments for requests.get.
 
         Raises:
-            InvalidDateError: If the comic strip is not found for the queried date.
+            InvalidDateError: If the comic strip is not found for the queried date, or if
+                a BunnyCDN anti-bot challenge page is returned instead of the comic page.
 
         Returns:
             requests.models.Response: Response object for the queried URL.
         """
         headers = kwargs.pop("headers", {})
-        headers.setdefault("Accept", "image/webp,image/apng,image/*,*/*;q=0.8")
+        # Use browser-like headers to avoid BunnyCDN Bunny Shield challenge pages.
+        # Without a real User-Agent and browser Accept header, GoComics's CDN returns
+        # a JS proof-of-work challenge (HTTP 200) instead of the comic page.
+        headers.setdefault(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        )
+        headers.setdefault(
+            "Accept",
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,"
+            "image/webp,image/apng,*/*;q=0.8",
+        )
+        headers.setdefault("Accept-Language", "en-US,en;q=0.9")
         r = requests.get(*args, headers=headers, verify=False, timeout=10)
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
             raise InvalidDateError(f"Comic strip not found for {args[0]}") from e
+
+        # Detect BunnyCDN anti-bot challenge page (served as HTTP 200 with JS challenge).
+        # This happens when the CDN doesn't believe the client is a real browser.
+        if b"bunny-shield" in r.content[:2048]:
+            raise InvalidDateError(
+                f"GoComics returned an anti-bot challenge page for {args[0]}. "
+                "The request was blocked by BunnyCDN Bunny Shield."
+            )
 
         return r

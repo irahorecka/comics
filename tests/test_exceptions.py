@@ -4,6 +4,7 @@ tests/test_exceptions
 """
 
 import datetime
+import os
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,6 +12,10 @@ from playwright.sync_api import Error as PlaywrightError
 
 import comics
 from comics._gocomics import ComicsAPI
+
+_ci_skip = pytest.mark.skipif(
+    os.getenv("CI") == "true", reason="GoComics blocks GitHub Actions IPs"
+)
 
 
 def test_invalid_endpoint():
@@ -22,6 +27,7 @@ def test_invalid_endpoint():
         comics.search("invalid_endpoint", date="2000-01-01")
 
 
+@_ci_skip
 def test_comic_not_found():
     """
     Tests proper raise of InvalidDateError when using a date that does not exist
@@ -49,6 +55,7 @@ def test_invalid_future_date():
         comics.search("calvinandhobbes", date="2050-01-01")
 
 
+@_ci_skip
 def test_future_date_reroute():
     """Tests that GoComics silently rerouting a future date to today raises InvalidDateError."""
     with pytest.raises(comics.exceptions.InvalidDateError):
