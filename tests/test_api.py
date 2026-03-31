@@ -3,6 +3,7 @@ tests/test_api
 ~~~~~~~~~~~~~~
 """
 
+import os
 import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -18,6 +19,12 @@ from comics._gocomics import bypass_comics_cache, ComicsAPI
 # 2025-06-05: Intermittend failures on fetching images from GoComics even with retries
 # Re-run flaky tests up to 4 times with a delay of 2 seconds between attempts
 pytestmark = pytest.mark.flaky(reruns=4, reruns_delay=2)
+
+# Tests that hit GoComics over the network are expected to fail in CI:
+# GitHub Actions IPs are datacenter ranges that BunnyCDN flags as bots.
+_ci_xfail = pytest.mark.xfail(
+    os.getenv("CI") == "true", reason="GoComics blocks GitHub Actions IPs", strict=False
+)
 
 
 def test_search_requires_date():
@@ -73,6 +80,7 @@ attributes = (
     ("peanuts", "Peanuts", "1965-07-04", "https://www.gocomics.com/peanuts/1965/07/04"),
 )
 # fmt: on
+@_ci_xfail
 @mark.parametrize("attr", attributes)
 def test_attributes(attr):
     """
@@ -90,6 +98,7 @@ def test_attributes(attr):
     assert requests.head(img_url, timeout=10).headers.get("content-type", "").startswith("image/")
 
 
+@_ci_xfail
 def test_stream():
     """Test comic image stream instance and status code."""
     ch = comics.search("calvinandhobbes", date="random")
@@ -97,18 +106,21 @@ def test_stream():
     assert ch.stream().status_code == 200
 
 
+@_ci_xfail
 def test_download_comic_by_random_and_verify_random_content():
     """Test proper random comic download execution and valid download image content."""
     ch = comics.search("calvinandhobbes", date="random")
     _download_comic_and_verify_content(ch)
 
 
+@_ci_xfail
 def test_download_comic_by_date_and_verify_content():
     """Test proper comic download execution and valid download image content."""
     ch = comics.search("calvinandhobbes", date="2025-04-03")
     _download_comic_and_verify_content(ch)
 
 
+@_ci_xfail
 def test_download_static_gif_to_png():
     """
     Test proper comic download execution and valid download image content of static GIF
@@ -172,6 +184,7 @@ def test_direct_random_api_no_warning():
         assert False, f"Returned date {inst.date} is not a valid date string"
 
 
+@_ci_xfail
 def test_image_url_with_retries_robustness():
     """Ensure image_url_with_retries does not raise immediately and returns a valid image URL."""
     ch = comics.search("jim-benton-cartoons", date="2020-05-10")
@@ -255,6 +268,7 @@ def test_extract_image_url_raises_on_canonical_date_mismatch():
         api._extract_image_url_from_response(DummyResp(html))
 
 
+@_ci_xfail
 def test_image_url_regression_garfield_2025_10_10():
     """
     Regression test for image_url failing on a real GoComics page.
