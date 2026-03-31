@@ -449,17 +449,39 @@ class ComicsAPI:
             kwargs (dict): Keyword arguments for requests.get.
 
         Raises:
-            InvalidDateError: If the comic strip is not found for the queried date.
+            InvalidDateError: If the comic strip is not found for the queried date, or if
+                a BunnyCDN anti-bot challenge page is returned instead of the comic page.
 
         Returns:
             requests.models.Response: Response object for the queried URL.
         """
         headers = kwargs.pop("headers", {})
-        headers.setdefault("Accept", "image/webp,image/apng,image/*,*/*;q=0.8")
+        # Use browser-like headers to avoid BunnyCDN Bunny Shield challenge pages.
+        # Without a real User-Agent and browser Accept header, GoComics's CDN returns
+        # a JS proof-of-work challenge (HTTP 200) instead of the comic page.
+        headers.setdefault(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        )
+        headers.setdefault(
+            "Accept",
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,"
+            "image/webp,image/apng,*/*;q=0.8",
+        )
+        headers.setdefault("Accept-Language", "en-US,en;q=0.9")
         r = requests.get(*args, headers=headers, verify=False, timeout=10)
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
             raise InvalidDateError(f"Comic strip not found for {args[0]}") from e
+
+        # Detect BunnyCDN anti-bot challenge page (served as HTTP 200 with JS challenge).
+        # This happens when the CDN doesn't believe the client is a real browser.
+        if b"bunny-shield" in r.content[:2048]:
+            raise InvalidDateError(
+                f"GoComics returned an anti-bot challenge page for {args[0]}. "
+                "The request was blocked by BunnyCDN Bunny Shield."
+            )
 
         return r
