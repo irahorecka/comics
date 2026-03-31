@@ -122,16 +122,12 @@ class search:
 
         return ComicsAPI(self.endpoint, self.title, date, self.force_playwright)
 
-    def random_date(self, max_attempts=20):
+    def random_date(self):
         """
         Constructs user interface with GoComics with a random comic strip date.
 
-        Args:
-            max_attempts (int): Maximum number of attempts to find a valid comic strip.
-                Defaults to 20.
-
         Raises:
-            InvalidDateError: If no valid comic strip could be found after fallback attempts.
+            InvalidDateError: If the randomly selected date is out of range.
 
         Returns:
             ComicsAPI: ComicsAPI instance of comic strip published on a random date.
@@ -140,35 +136,13 @@ class search:
         today = datetime.today().date()
         start = datetime.strptime(self.start_date, "%Y-%m-%d").date()
 
-        # Step 1: Try full-range random dates
-        for _ in range(max_attempts):
-            rand_days = randint(0, (today - start).days)
-            date = start + timedelta(days=rand_days)
-            try:
-                # Attempt to get comic strip for random date
-                potential_comic = self.date(date)
-                if potential_comic.image_url:
-                    return potential_comic
-            except (InvalidDateError, requests.exceptions.HTTPError):
-                continue
-
-        # Step 2: Fallback to past year
-        fallback_start = today - timedelta(days=365)
-        tried_offsets = set()
-        while len(tried_offsets) < 365:
-            offset = randint(0, 364)
-            if offset in tried_offsets:
-                continue
-            tried_offsets.add(offset)
-            date = fallback_start + timedelta(days=offset)
-            try:
-                potential_comic = self.date(date)
-                if potential_comic.image_url:
-                    return potential_comic
-            except (InvalidDateError, requests.exceptions.HTTPError):
-                continue
-
-        raise InvalidDateError("Could not find a valid comic after fallback attempts.")
+        # Pick a random date within the comic's full publication range.
+        # No network validation here — date arithmetic is sufficient.
+        # Eagerly fetching image_url per attempt caused O(N) HTTP requests,
+        # which triggered rate limiting in CI where many parallel runs hit
+        # GoComics simultaneously.
+        rand_days = randint(0, (today - start).days)
+        return self.date(start + timedelta(days=rand_days))
 
 
 class ComicsAPI:
@@ -407,17 +381,17 @@ class ComicsAPI:
             browsers = [p.webkit, p.firefox, p.chromium]
             last_error = None
             for browser in browsers:
+                launched_browser = None
                 try:
                     launched_browser = browser.launch()
                     page = launched_browser.new_page()
-                    r = page.goto(url)
+                    # Explicit timeout prevents indefinite hangs in CI (default is 30s per action).
+                    r = page.goto(url, timeout=15000)
                     if r is not None:
                         if 400 <= r.status < 600:
                             print(f"HTTP error {r.status} for {url} with {browser.name}")
                             continue
                         st = page.content()
-                        launched_browser.close()
-                        resp = Response()
                         resp = MagicMock(spec=Response)
                         resp.status_code = 400
                         resp.text = st
@@ -426,6 +400,10 @@ class ComicsAPI:
                 except (PlaywrightError, PlaywrightTimeoutError) as ex:
                     last_error = ex
                     print(f"Playwright error with {browser.name}: {ex}")
+                finally:
+                    if launched_browser is not None:
+                        with contextlib.suppress(Exception):
+                            launched_browser.close()
 
             base_msg = (
                 "Ensure Playwright browsers are installed by running:\n\n"
