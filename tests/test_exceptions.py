@@ -5,10 +5,13 @@ tests/test_exceptions
 
 import datetime
 import os
+from inspect import unwrap
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-from playwright.sync_api import Error as PlaywrightError
+import requests
+from playwright.sync_api import Error as PlaywrightError, TimeoutError as PlaywrightTimeoutError
 
 import comics
 from comics._gocomics import ComicsAPI
@@ -151,3 +154,139 @@ def test_playwright_failure_falls_back(monkeypatch):
     comic = comics.search("calvinandhobbes", date="2020-01-01", force_playwright=False)
     url = comic.image_url
     assert url == "https://img.comic.com/fallback.png"
+
+
+_URL = "https://www.gocomics.com/foo/2022/01/01"
+_REAL_PAGE = (
+    "<html><head><meta property='og:image' content='https://img.comic.com/strip.png'/></head>"
+    "<body><script src='/.bunny-shield/bd/bunnyprint.js'></script></body></html>"
+)
+_CHALLENGE_PAGE = "<html><body data-pow='1#2'></body></html>"
+
+
+def _comic():
+    return ComicsAPI("foo", "Foo", datetime.date(2022, 1, 1))
+
+
+def _requests_get(monkeypatch, status_code, text):
+    response = SimpleNamespace(
+        status_code=status_code,
+        content=text.encode(),
+        raise_for_status=lambda: None,
+    )
+    monkeypatch.setattr(comics._gocomics.requests, "get", lambda *args, **kwargs: response)
+
+
+@pytest.mark.parametrize("status_code", [403, 429])
+def test_requests_blocked_status_raises_blocked_error(monkeypatch, status_code):
+    """GoComics answers a missing strip with HTTP 200, so 403 and 429 are never a missing date."""
+    _requests_get(monkeypatch, status_code, "")
+    with pytest.raises(comics.exceptions.ComicsBlockedError):
+        _comic()._get_response(_URL)
+
+
+def test_requests_challenge_page_raises_blocked_error(monkeypatch):
+    _requests_get(monkeypatch, 200, _CHALLENGE_PAGE)
+    with pytest.raises(comics.exceptions.ComicsBlockedError):
+        _comic()._get_response(_URL)
+
+
+def test_requests_real_page_with_bunny_shield_script_is_not_blocked(monkeypatch):
+    _requests_get(monkeypatch, 200, _REAL_PAGE)
+    assert _comic()._get_response(_URL).content == _REAL_PAGE.encode()
+
+
+class _FakePage:
+    """Playwright page stand-in. `challenge` is whether `data-pow` is set after `goto`."""
+
+    def __init__(self, status, challenge, clears, html):
+        self.status, self.challenge, self.clears, self.html = status, challenge, clears, html
+
+    def goto(self, url, timeout):
+        return SimpleNamespace(status=self.status)
+
+    def evaluate(self, js):
+        return "Mozilla/5.0 HeadlessChrome/140.0" if "userAgent" in js else self.challenge
+
+    def wait_for_function(self, js, timeout):
+        if not self.clears:
+            raise PlaywrightTimeoutError("timeout")
+
+    def wait_for_load_state(self, state):
+        pass
+
+    def content(self):
+        return self.html
+
+    def close(self):
+        pass
+
+
+def _fake_playwright(monkeypatch, **page_args):
+    """Patches `sync_playwright` so every engine serves a `_FakePage(**page_args)`."""
+    engines = {}
+    for name in ("webkit", "firefox", "chromium"):
+        browser = MagicMock()
+        browser.new_page.return_value = _FakePage(**page_args)
+        browser.new_context.return_value.new_page.return_value = _FakePage(**page_args)
+        engines[name] = MagicMock(launch=MagicMock(return_value=browser))
+        engines[name].name = name
+    ctx = MagicMock()
+    ctx.__enter__.return_value = SimpleNamespace(**engines)
+    monkeypatch.setattr(comics._gocomics, "sync_playwright", MagicMock(return_value=ctx))
+    return engines
+
+
+def test_playwright_waits_for_challenge_served_with_403(monkeypatch):
+    """BunnyCDN serves its proof-of-work challenge with HTTP 403, which must not end the wait."""
+    _fake_playwright(monkeypatch, status=403, challenge=True, clears=True, html=_REAL_PAGE)
+    resp = unwrap(ComicsAPI._get_response_playwright)(_comic(), _URL)
+    assert resp.content == _REAL_PAGE.encode()
+
+
+def test_playwright_unresolved_challenge_raises_blocked_error(monkeypatch):
+    _fake_playwright(monkeypatch, status=403, challenge=True, clears=False, html=_CHALLENGE_PAGE)
+    with pytest.raises(comics.exceptions.ComicsBlockedError):
+        unwrap(ComicsAPI._get_response_playwright)(_comic(), _URL)
+
+
+@pytest.mark.parametrize("status", [403, 429])
+def test_playwright_blocked_status_raises_blocked_error(monkeypatch, status):
+    _fake_playwright(monkeypatch, status=status, challenge=False, clears=True, html="")
+    with pytest.raises(comics.exceptions.ComicsBlockedError):
+        unwrap(ComicsAPI._get_response_playwright)(_comic(), _URL)
+
+
+def test_playwright_chromium_does_not_announce_itself_as_headless(monkeypatch):
+    engines = _fake_playwright(monkeypatch, status=200, challenge=False, clears=True, html="ok")
+    engines["webkit"].launch.side_effect = PlaywrightError("not installed")
+    engines["firefox"].launch.side_effect = PlaywrightError("not installed")
+    unwrap(ComicsAPI._get_response_playwright)(_comic(), _URL)
+    context = engines["chromium"].launch.return_value.new_context
+    assert context.call_args.kwargs["user_agent"] == "Mozilla/5.0 Chrome/140.0"
+
+
+def test_blocked_error_is_not_retried(monkeypatch):
+    calls = []
+
+    def blocked(self, url):
+        calls.append(url)
+        raise comics.exceptions.ComicsBlockedError("blocked")
+
+    monkeypatch.setattr(ComicsAPI, "_get_response_playwright", blocked)
+    monkeypatch.setattr(ComicsAPI, "_get_response", blocked)
+    comic = comics.search("calvinandhobbes", date="2020-01-01")
+    with pytest.raises(comics.exceptions.ComicsBlockedError):
+        comic.image_url_with_retries(retries=5, base_delay=0)
+    assert len(calls) == 2  # Playwright, then the requests fallback; no retries
+
+
+def test_blocked_error_with_force_playwright_is_a_playwright_error(monkeypatch):
+    def blocked(self, url):
+        raise comics.exceptions.ComicsBlockedError("blocked")
+
+    monkeypatch.setattr(ComicsAPI, "_get_response_playwright", blocked)
+    comic = comics.search("calvinandhobbes", date="2020-01-01", force_playwright=True)
+    with pytest.raises(comics.exceptions.ComicsPlaywrightError) as excinfo:
+        comic.image_url
+    assert isinstance(excinfo.value.__cause__, comics.exceptions.ComicsBlockedError)

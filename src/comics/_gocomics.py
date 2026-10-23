@@ -9,7 +9,7 @@ import os
 import re
 import time
 from datetime import datetime, timedelta
-from functools import lru_cache, wraps
+from functools import lru_cache, partial, wraps
 from inspect import unwrap
 from io import BytesIO
 from random import randint
@@ -28,10 +28,41 @@ from bs4 import BeautifulSoup
 from PIL import Image
 
 from ._constants import directory
-from .exceptions import ComicsPlaywrightError, InvalidDateError
+from .exceptions import ComicsBlockedError, ComicsPlaywrightError, InvalidDateError
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 _BASE_URL = "https://www.gocomics.com"
+
+
+def _launch_page(browser_type):
+    """
+    Launches `browser_type` and opens a page that presents itself as a regular browser.
+
+    BunnyCDN Shield rejects Chromium's headless shell and any `HeadlessChrome` user agent, so
+    Chromium launches in its new headless mode (Playwright >= 1.49) and drops the `Headless`
+    token from its own user agent. Other engines need no changes.
+
+    Args:
+        browser_type (playwright.sync_api.BrowserType): Browser engine to launch.
+
+    Returns:
+        tuple: The launched browser, which the caller must close, and its page.
+    """
+    if browser_type.name != "chromium":
+        browser = browser_type.launch()
+        return browser, browser.new_page()
+    try:
+        browser = browser_type.launch(channel="chromium")
+    except PlaywrightError:
+        browser = browser_type.launch()
+    try:
+        probe = browser.new_page()
+        user_agent = probe.evaluate("navigator.userAgent").replace("HeadlessChrome", "Chrome")
+        probe.close()
+        return browser, browser.new_context(user_agent=user_agent).new_page()
+    except Exception:
+        browser.close()
+        raise
 
 
 def bypass_comics_cache(func):
@@ -239,24 +270,44 @@ class ComicsAPI:
 
         Raises:
             ComicsPlaywrightError: If no image URL could be found for the requested date.
+            ComicsBlockedError: If GoComics' CDN blocked the request.
 
         Returns:
             str: Comic strip image URL.
         """
+        return self._extract_image_url_from_response(self._fetch_page())
+
+    def _fetch_page(self, bypass_cache=False):
+        """
+        Fetches the comic strip page using Playwright, falling back to requests if Playwright
+        is not forced.
+
+        Args:
+            bypass_cache (bool): Whether to ignore cached responses. Defaults to False.
+
+        Raises:
+            ComicsPlaywrightError: If Playwright failed or was blocked and is forced.
+            ComicsBlockedError: If GoComics' CDN blocked the request.
+            InvalidDateError: If the comic strip page could not be found.
+
+        Returns:
+            requests.models.Response: Response object for the comic strip page.
+        """
+        get_playwright, get_requests = self._get_response_playwright, self._get_response
+        if bypass_cache:
+            get_playwright = partial(unwrap(type(self)._get_response_playwright), self)
+            get_requests = partial(unwrap(type(self)._get_response), self)
         try:
-            r = self._get_response_playwright(self.url)
-        except PlaywrightError as ex:
+            return get_playwright(self.url)
+        except (PlaywrightError, ComicsBlockedError) as ex:
             if self._force_playwright is True:
                 # Preserve original Playwright error message for visibility
                 raise ComicsPlaywrightError(str(ex)) from ex
-            else:
-                r = self._get_response(self.url)
-
-        return self._extract_image_url_from_response(r)
+            return get_requests(self.url)
 
     def image_url_with_retries(self, retries=5, base_delay=0.5):
         """
-        Retry wrapper for image_url property.
+        Retry wrapper for image_url property. A ComicsBlockedError is not retried.
 
         Args:
             retries (int): Number of retries if image not found. Defaults to 5.
@@ -265,6 +316,7 @@ class ComicsAPI:
         Raises:
             InvalidDateError: If no image URL could be found after retries.
             ComicsPlaywrightError: If no image URL could be found for the requested date.
+            ComicsBlockedError: If GoComics' CDN blocked the request.
 
         Returns:
             str: Comic strip image URL.
@@ -272,18 +324,7 @@ class ComicsAPI:
         # Retry logic for image_url property
         for i in range(retries + 1):
             try:
-                if i == 0:
-                    return self.image_url
-                else:
-                    try:
-                        r = unwrap(type(self)._get_response_playwright)(self, self.url)
-                    except PlaywrightError as ex:
-                        if self._force_playwright is True:
-                            # Preserve original Playwright error message for visibility
-                            raise ComicsPlaywrightError(str(ex)) from ex
-                        else:
-                            r = unwrap(type(self)._get_response)(self, self.url)
-                    return self._extract_image_url_from_response(r)
+                return self._extract_image_url_from_response(self._fetch_page(bypass_cache=i > 0))
             # Handle specific InvalidDateError to retry
             except InvalidDateError:
                 if i < retries:
@@ -372,6 +413,7 @@ class ComicsAPI:
 
         Raises:
             PlaywrightError: If Playwright encounters an error or the page is not found.
+            ComicsBlockedError: If GoComics' CDN blocked every browser that could be launched.
 
         Returns:
             requests.models.Response: Response object for the queried URL.
@@ -380,27 +422,34 @@ class ComicsAPI:
             # Try any of the following browsers. If one of them succeeds, go ahead; otherwise collect the last error.
             browsers = [p.webkit, p.firefox, p.chromium]
             last_error = None
+            blocked = []
             for browser in browsers:
                 launched_browser = None
                 try:
-                    launched_browser = browser.launch()
-                    page = launched_browser.new_page()
+                    launched_browser, page = _launch_page(browser)
                     # Explicit timeout prevents indefinite hangs in CI (default is 30s per action).
                     r = page.goto(url, timeout=15000)
                     if r is not None:
-                        if 400 <= r.status < 600:
+                        # BunnyCDN serves its JS proof-of-work challenge with HTTP 403 (it used
+                        # to be 200). The challenge page sets data-pow on <body>; the real
+                        # comic page does not. We wait until it disappears, which signals the
+                        # PoW was submitted and the CDN redirected back to the actual page.
+                        if page.evaluate("document.body.hasAttribute('data-pow')"):
+                            try:
+                                page.wait_for_function(
+                                    "() => !document.body.hasAttribute('data-pow')",
+                                    timeout=20000,
+                                )
+                            except PlaywrightTimeoutError:
+                                blocked.append(f"{browser.name}: challenge did not clear")
+                                continue
+                            # page.content() raises while the redirect is still navigating.
+                            page.wait_for_load_state("domcontentloaded")
+                        elif 400 <= r.status < 600:
                             print(f"HTTP error {r.status} for {url} with {browser.name}")
+                            if r.status in (403, 429):
+                                blocked.append(f"{browser.name}: HTTP {r.status}")
                             continue
-                        # Wait for BunnyCDN JS challenge to complete.
-                        # The challenge page sets data-pow on <body>; the real
-                        # comic page does not. We wait until it disappears,
-                        # which signals the PoW was submitted and the CDN
-                        # redirected back to the actual page.
-                        with contextlib.suppress(PlaywrightTimeoutError):
-                            page.wait_for_function(
-                                "() => !document.body.hasAttribute('data-pow')",
-                                timeout=20000,
-                            )
                         st = page.content()
                         resp = MagicMock(spec=Response)
                         resp.status_code = 400
@@ -414,6 +463,12 @@ class ComicsAPI:
                     if launched_browser is not None:
                         with contextlib.suppress(Exception):
                             launched_browser.close()
+
+            if blocked:
+                raise ComicsBlockedError(
+                    f"GoComics blocked the request for {url} ({'; '.join(blocked)}). "
+                    "The CDN (BunnyCDN Bunny Shield) is rejecting this client or network."
+                )
 
             base_msg = (
                 "Ensure Playwright browsers are installed by running:\n\n"
@@ -437,8 +492,9 @@ class ComicsAPI:
             kwargs (dict): Keyword arguments for requests.get.
 
         Raises:
-            InvalidDateError: If the comic strip is not found for the queried date, or if
-                a BunnyCDN anti-bot challenge page is returned instead of the comic page.
+            InvalidDateError: If the comic strip is not found for the queried date.
+            ComicsBlockedError: If GoComics' CDN answered with HTTP 403 or 429, or an anti-bot
+                challenge page, instead of the comic page.
 
         Returns:
             requests.models.Response: Response object for the queried URL.
@@ -458,15 +514,23 @@ class ComicsAPI:
         )
         headers.setdefault("Accept-Language", "en-US,en;q=0.9")
         r = requests.get(*args, headers=headers, verify=False, timeout=10)
+        # GoComics answers a missing strip with HTTP 200, so 403 and 429 are the CDN rejecting
+        # or rate limiting this client, never a missing date.
+        if r.status_code in (403, 429):
+            raise ComicsBlockedError(
+                f"GoComics returned HTTP {r.status_code} for {args[0]}. "
+                "The request was blocked by BunnyCDN Bunny Shield."
+            )
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
             raise InvalidDateError(f"Comic strip not found for {args[0]}") from e
 
         # Detect BunnyCDN anti-bot challenge page (served as HTTP 200 with JS challenge).
-        # This happens when the CDN doesn't believe the client is a real browser.
-        if b"bunny-shield" in r.content[:2048]:
-            raise InvalidDateError(
+        # This happens when the CDN doesn't believe the client is a real browser. Match the
+        # challenge's `data-pow` marker: real pages also embed a `/.bunny-shield/` script.
+        if b"data-pow" in r.content[:4096]:
+            raise ComicsBlockedError(
                 f"GoComics returned an anti-bot challenge page for {args[0]}. "
                 "The request was blocked by BunnyCDN Bunny Shield."
             )

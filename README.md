@@ -178,6 +178,18 @@ except comics.exceptions.InvalidEndpointError:
     print("Whoops, an invalid endpoint was queried.")
 ```
 
+An exception will be thrown if GoComics' CDN rejects the request (HTTP 403, HTTP 429 rate limiting, or an anti-bot challenge that never resolves). This is not retried, since it depends on your client and network rather than the date:
+
+```python
+import comics
+
+try:
+    garfield = comics.search("garfield", date="2020-05-05")
+    garfield.download()
+except comics.exceptions.ComicsBlockedError:
+    print("GoComics rejected this request. Wait a while or try a different network.")
+```
+
 An exception will be thrown if Playwright fails to fetch a comic (e.g., browser not installed or page error):
 
 ```python
