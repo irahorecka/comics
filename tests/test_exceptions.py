@@ -170,9 +170,7 @@ def _comic():
 
 def _requests_get(monkeypatch, status_code, text):
     response = SimpleNamespace(
-        status_code=status_code,
-        content=text.encode(),
-        raise_for_status=lambda: None,
+        status_code=status_code, content=text.encode(), raise_for_status=lambda: None,
     )
     monkeypatch.setattr(comics._gocomics.requests, "get", lambda *args, **kwargs: response)
 
