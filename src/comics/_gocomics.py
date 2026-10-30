@@ -328,7 +328,7 @@ class ComicsAPI:
             # Handle specific InvalidDateError to retry
             except InvalidDateError:
                 if i < retries:
-                    time.sleep(base_delay * (2 ** i))
+                    time.sleep(base_delay * (2**i))
                 else:
                     raise InvalidDateError(
                         f"Could not find image URL for {self.date} after {retries} retries."
@@ -374,7 +374,8 @@ class ComicsAPI:
 
         # If not found, try extracting image URL from ld+json script tag within the correct container
         viewer_div = comic_html.find(
-            "div", class_=lambda c: c and c.startswith("ShowComicViewer_showComicViewer__comic"),
+            "div",
+            class_=lambda c: c and c.startswith("ShowComicViewer_showComicViewer__comic"),
         )
         if viewer_div:
             script_tag = viewer_div.find("script", type="application/ld+json")
@@ -436,7 +437,8 @@ class ComicsAPI:
                         if page.evaluate("document.body.hasAttribute('data-pow')"):
                             try:
                                 page.wait_for_function(
-                                    "() => !document.body.hasAttribute('data-pow')", timeout=20000,
+                                    "() => !document.body.hasAttribute('data-pow')",
+                                    timeout=20000,
                                 )
                             except PlaywrightTimeoutError:
                                 blocked.append(f"{browser.name}: challenge did not clear")
