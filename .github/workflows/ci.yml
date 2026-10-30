@@ -11,13 +11,19 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
       cancel-in-progress: true
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.8", "3.13"]
+        include:
+          # Python 3.8 has no build for Ubuntu 26.04 (ubuntu-latest)
+          - os: ubuntu-24.04
+            python-version: "3.8"
+          - os: ubuntu-latest
+            python-version: "3.13"
     steps:
     - uses: actions/checkout@v4
 
